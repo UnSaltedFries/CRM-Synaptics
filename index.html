@@ -175,6 +175,7 @@
   .prospect-name { display: flex; align-items: center; gap: 9px; }
   .av-sm { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; }
   .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-select { padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; border: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 6px center; padding-right: 20px; }
   .score-wrap { display: flex; align-items: center; gap: 7px; }
   .score-track { width: 52px; height: 4px; background: var(--surface2); border-radius: 2px; }
   .score-fill { height: 4px; border-radius: 2px; }
@@ -414,11 +415,12 @@
           <input class="tbl-search" type="text" placeholder="Rechercher..." id="searchQ" oninput="renderTable()"/>
           <select class="tbl-filter" id="filterStatus" onchange="renderTable()">
             <option value="">Tous les statuts</option>
-            <option value="new">Nouveau</option>
-            <option value="contact">Contacté</option>
-            <option value="prop">Proposition</option>
-            <option value="nego">Négociation</option>
-            <option value="gagne">Gagné</option>
+            <option value="appeler">À appeler</option>
+            <option value="appele">Appelé</option>
+            <option value="repondu">Répondu</option>
+            <option value="rdv_planifie">RDV planifié</option>
+            <option value="rdv_effectue">RDV effectué</option>
+            <option value="signe">Signé</option>
             <option value="perdu">Perdu</option>
           </select>
           <select class="tbl-filter" id="filterResp" onchange="renderTable()">
@@ -595,11 +597,12 @@
       <div class="mfield">
         <label>Statut</label>
         <select id="mStatut">
-          <option value="new">Nouveau</option>
-          <option value="contact">Contacté</option>
-          <option value="prop">Proposition</option>
-          <option value="nego">Négociation</option>
-          <option value="gagne">Gagné</option>
+          <option value="appeler">À appeler</option>
+          <option value="appele">Appelé</option>
+          <option value="repondu">Répondu</option>
+          <option value="rdv_planifie">RDV planifié</option>
+          <option value="rdv_effectue">RDV effectué</option>
+          <option value="signe">Signé</option>
           <option value="perdu">Perdu</option>
         </select>
       </div>
@@ -772,8 +775,15 @@ function loadProspects() {
 
 // ─── PIPELINE DATA (from real prospects) ───
 const stageMap = { 'new':'Nouveaux', 'contact':'Contactés', 'prop':'Proposition', 'nego':'Négociation', 'gagne':'Gagnés' };
-const stageKeys = ['new','contact','prop','nego','gagne'];
-const stageNames = ['Nouveaux','Contactés','Proposition','Négociation','Gagnés'];
+// Pipeline funnel: 5 visible stages
+const pipeKeys = ['appeler','appele','repondu','rdv_effectue','signe'];
+const pipeNames = ['À appeler','Appelé','Répondu','RDV effectué','Signé'];
+// Sub-stages shown on hover
+const subStages = { rdv_effectue: 'rdv_planifie', signe: 'perdu' };
+const subNames = { rdv_planifie: 'RDV planifié', perdu: 'Perdu' };
+// All status keys used for counting
+const stageKeys = pipeKeys;
+const stageNames = pipeNames;
 const pColors = [
   { fill:'#3B82F6', stroke:'#1E40AF', bar:'#3B82F6' },
   { fill:'#2563EB', stroke:'#1E3A8A', bar:'#2563EB' },
@@ -903,13 +913,14 @@ function renderConv() {
 }
 
 // ─── TABLE ───
-const statusMap={new:'Nouveau',contact:'Contacté',prop:'Proposition',nego:'Négociation',gagne:'Gagné',perdu:'Perdu'};
+const statusMap={appeler:'À appeler',appele:'Appelé',repondu:'Répondu',rdv_planifie:'RDV planifié',rdv_effectue:'RDV effectué',signe:'Signé',perdu:'Perdu'};
 const badgeCss={
-  new:`background:#E6F1FB;color:#185FA5`,
-  contact:`background:#EEEDFE;color:#534AB7`,
-  prop:`background:#FAEEDA;color:#854F0B`,
-  nego:`background:#EAF3DE;color:#0F6E56`,
-  gagne:`background:#EAF3DE;color:#27500A`,
+  appeler:`background:#E6F1FB;color:#185FA5`,
+  appele:`background:#EEEDFE;color:#534AB7`,
+  repondu:`background:#FAEEDA;color:#854F0B`,
+  rdv_planifie:`background:#FFF3CD;color:#856404`,
+  rdv_effectue:`background:#EAF3DE;color:#0F6E56`,
+  signe:`background:#D4EDDA;color:#27500A`,
   perdu:`background:#FCEBEB;color:#A32D2D`
 };
 
@@ -933,7 +944,7 @@ function renderTable() {
     return `<tr>
       <td><div class="prospect-name"><div class="av-sm" style="background:${bg};color:${fg}">${p.initiales}</div>${p.nom}</div></td>
       <td style="color:var(--text2)">${p.entreprise}</td>
-      <td><span class="badge" style="${badgeCss[p.statut]||''}">${statusMap[p.statut]||p.statut}</span></td>
+      <td><select class="badge-select" style="${badgeCss[p.statut]||''}" onchange="changeStatus('${p.id}',this.value)">${Object.keys(statusMap).map(k=>`<option value="${k}"${k===p.statut?' selected':''}>${statusMap[k]}</option>`).join('')}</select></td>
       <td style="color:var(--text2);font-size:12px">${p.source}</td>
       <td style="font-weight:500">${Number(p.valeur).toLocaleString('fr-FR')} €</td>
       <td><div class="score-wrap"><div class="score-track"><div class="score-fill" style="width:${p.score}%;background:${sc}"></div></div><span style="font-size:12px;color:var(--text2)">${p.score}</span></div></td>
@@ -948,6 +959,11 @@ function renderTable() {
   }).join('');
   const suffix = display.length !== rows.length ? ` sur ${rows.length}` : '';
   document.getElementById('tblCount').textContent = `${display.length} prospect${display.length>1?'s':''} affiché${display.length>1?'s':''}${suffix}`;
+}
+
+function changeStatus(id, newStatus) {
+  const p = prospects.find(x => x.id === id);
+  if (p) { p.statut = newStatus; renderAll(); }
 }
 
 // ─── MODAL ───
