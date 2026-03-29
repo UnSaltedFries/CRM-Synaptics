@@ -979,7 +979,7 @@
     }
 
     .table-top {
-      padding: 14px 18px;
+      padding: 18px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -995,13 +995,13 @@
 
     .table-controls {
       display: flex;
-      gap: 8px;
+      gap: 12px;
       align-items: center;
       flex-wrap: wrap;
     }
 
     .tbl-search {
-      padding: 6px 12px;
+      padding: 8px 14px;
       border: 0.5px solid var(--border2);
       border-radius: var(--radius);
       background: var(--surface2);
@@ -1016,12 +1016,12 @@
     }
 
     select.tbl-filter {
-      padding: 6px 10px;
+      padding: 8px 12px;
       border: 0.5px solid var(--border2);
       border-radius: var(--radius);
       background: var(--surface2);
       color: var(--text);
-      font-size: 12px;
+      font-size: 13px;
       cursor: pointer;
       outline: none;
     }
@@ -1034,8 +1034,8 @@
     }
 
     .status-trigger {
-      padding: 6px 12px;
-      min-width: 140px;
+      padding: 8px 16px;
+      min-width: 150px;
       border: 0.5px solid var(--border2);
       border-radius: var(--radius);
       background: var(--surface2);
@@ -1152,7 +1152,7 @@
 
     thead th {
       text-align: left;
-      padding: 8px 10px;
+      padding: 12px 14px;
       font-size: 11px;
       color: var(--text2);
       font-weight: 500;
@@ -1205,7 +1205,7 @@
     }
 
     tbody td {
-      padding: 7px 10px;
+      padding: 11px 14px;
       vertical-align: middle;
       white-space: nowrap;
     }
@@ -2246,45 +2246,45 @@
                     </div>
                     <div class="status-options" id="statusOptions">
                       <div class="status-option" onclick="toggleAllStatuses(event)">
-                        <input type="checkbox" id="checkAllStatus" checked onclick="event.stopPropagation()">
+                        <input type="checkbox" id="checkAllStatus" checked>
                         <span style="font-weight:600">Tous les statuts</span>
                       </div>
                       <div class="status-divider"></div>
                       <div class="status-option" onclick="toggleOneStatus(event, 'appeler')">
-                        <input type="checkbox" class="status-cb" value="appeler" checked onclick="event.stopPropagation()">
+                        <input type="checkbox" class="status-cb" value="appeler" checked>
                         <span>À appeler</span>
                       </div>
                       <div class="status-option" onclick="toggleOneStatus(event, 'appele')">
-                        <input type="checkbox" class="status-cb" value="appele" checked onclick="event.stopPropagation()">
+                        <input type="checkbox" class="status-cb" value="appele" checked>
                         <span>Appelé</span>
                       </div>
                       <div class="status-option" onclick="toggleOneStatus(event, 'repondu')">
-                        <input type="checkbox" class="status-cb" value="repondu" checked onclick="event.stopPropagation()">
+                        <input type="checkbox" class="status-cb" value="repondu" checked>
                         <span>Répondu</span>
                       </div>
                       <div class="status-option" onclick="toggleOneStatus(event, 'rdv_planifie')">
-                        <input type="checkbox" class="status-cb" value="rdv_planifie" checked onclick="event.stopPropagation()">
+                        <input type="checkbox" class="status-cb" value="rdv_planifie" checked>
                         <span>RDV planifié</span>
                       </div>
                       <div class="status-option" onclick="toggleOneStatus(event, 'rdv_effectue')">
-                        <input type="checkbox" class="status-cb" value="rdv_effectue" checked onclick="event.stopPropagation()">
+                        <input type="checkbox" class="status-cb" value="rdv_effectue" checked>
                         <span>RDV effectué</span>
                       </div>
                       <div class="status-option" onclick="toggleOneStatus(event, 'signe')">
-                        <input type="checkbox" class="status-cb" value="signe" checked onclick="event.stopPropagation()">
+                        <input type="checkbox" class="status-cb" value="signe" checked>
                         <span>Signé</span>
                       </div>
                       <div class="status-option" onclick="toggleOneStatus(event, 'perdu')">
-                        <input type="checkbox" class="status-cb" value="perdu" checked onclick="event.stopPropagation()">
+                        <input type="checkbox" class="status-cb" value="perdu" checked>
                         <span>Perdu</span>
                       </div>
                       <div class="status-option" onclick="toggleOneStatus(event, 'npai')">
-                        <input type="checkbox" class="status-cb" value="npai" checked onclick="event.stopPropagation()">
+                        <input type="checkbox" class="status-cb" value="npai" checked>
                         <span>Faux N°/NPAI</span>
                       </div>
                       <div class="status-divider"></div>
                       <div class="status-option" onclick="toggleOneStatus(event, 'exemple')">
-                        <input type="checkbox" class="status-cb" value="exemple" onclick="event.stopPropagation()">
+                        <input type="checkbox" class="status-cb" value="exemple">
                         <span style="color:var(--text2)">Exemples (test)</span>
                       </div>
                     </div>
@@ -2838,7 +2838,10 @@
     function toggleOneStatus(e, val) {
       e.stopPropagation();
       const cb = e.currentTarget.querySelector('input');
-      cb.checked = !cb.checked;
+      // If the target was NOT the checkbox, manually toggle it.
+      // If it WAS the checkbox, browser already toggled it.
+      if (e.target.tagName !== 'INPUT') cb.checked = !cb.checked;
+      
       updateStatusLabel();
       renderTable();
     }
@@ -2846,7 +2849,9 @@
     function toggleAllStatuses(e) {
       e.stopPropagation();
       const master = document.getElementById('checkAllStatus');
-      master.checked = !master.checked;
+      // If click was on the row but not the checkbox, toggle master
+      if (e.target.tagName !== 'INPUT') master.checked = !master.checked;
+      
       const cbs = document.querySelectorAll('.status-cb');
       cbs.forEach(cb => {
         // "Tous les statuts" selection logic: exclude 'exemple' from the "All" toggle
