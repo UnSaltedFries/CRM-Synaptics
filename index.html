@@ -303,7 +303,7 @@
     /* ── TOPNAV ── */
     .topnav {
       background: var(--surface);
-      border-bottom: none;
+      border-bottom: 0.5px solid var(--border2);
       padding: 0 24px;
       height: 52px;
       display: flex;
@@ -330,6 +330,8 @@
       font-size: 15px;
       cursor: pointer;
       transition: color 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .nav-logo:hover {
@@ -2697,9 +2699,10 @@
       svg.innerHTML = '';
       const W = 800, H = 220, mid = H / 2, max = currentData[0] || 1;
       // Visual heights with minimum funnel taper (each stage ≤ 85% of previous visually)
-      const rawH = currentData.map(v => (v / max) * (H * 0.78));
+      const MIN_H = 40; // minimum thickness for hoverability
+      const rawH = currentData.map(v => Math.max(MIN_H, (v / max) * (H * 0.78)));
       const visH = [rawH[0]];
-      for (let j = 1; j < rawH.length; j++) { visH[j] = Math.min(rawH[j], visH[j - 1] * 0.85); }
+      for (let j = 1; j < rawH.length; j++) { visH[j] = Math.max(MIN_H, Math.min(rawH[j], visH[j - 1] * 0.85)); }
 
       for (let i = 0; i < currentData.length - 1; i++) {
         const sv = visH[i], ev = visH[i + 1];
