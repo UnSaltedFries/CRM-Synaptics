@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CRM Synaptic</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <style>
   /* ── Reset & base ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
+    color-scheme: light;
     --bg: #f8f8f7;
     --surface: #ffffff;
     --surface2: #f1f0ec;
@@ -17,8 +19,8 @@
     --text: #1a1a18;
     --text2: #6b6b67;
     --text3: #a0a09c;
-    --blue: #378ADD; --blue-l: #E6F1FB; --blue-d: #0C447C;
-    --purple: #7F77DD; --purple-l: #EEEDFE; --purple-d: #3C3489;
+    --blue: #7C3AED; --blue-l: #F3F0FF; --blue-d: #4C1D95;
+    --purple: #378ADD; --purple-l: #E6F1FB; --purple-d: #0C447C;
     --amber: #EF9F27; --amber-l: #FAEEDA; --amber-d: #633806;
     --teal: #1D9E75; --teal-l: #E1F5EE; --teal-d: #085041;
     --green: #639922; --green-l: #EAF3DE; --green-d: #27500A;
@@ -26,20 +28,35 @@
     --radius: 10px;
     --radius-lg: 14px;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1a1a18; --surface: #242422; --surface2: #2e2e2b;
-      --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18);
-      --text: #f0efe8; --text2: #9a9a94; --text3: #5a5a56;
-      --blue-l: #042C53; --blue-d: #85B7EB;
-      --purple-l: #26215C; --purple-d: #AFA9EC;
-      --amber-l: #412402; --amber-d: #FAC775;
-      --teal-l: #04342C; --teal-d: #5DCAA5;
-      --green-l: #173404; --green-d: #97C459;
-      --red-l: #501313; --red-d: #F09595;
-    }
+  html.dark {
+    color-scheme: dark;
+    --bg: #1a1a18; --surface: #242422; --surface2: #2e2e2b;
+    --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18);
+    --text: #f0efe8; --text2: #9a9a94; --text3: #5a5a56;
+    --blue-l: #2E1065; --blue-d: #C4B5FD;
+    --purple-l: #042C53; --purple-d: #85B7EB;
+    --amber-l: #412402; --amber-d: #FAC775;
+    --teal-l: #04342C; --teal-d: #5DCAA5;
+    --green-l: #173404; --green-d: #97C459;
+    --red-l: #501313; --red-d: #F09595;
   }
 
+  /* Theme toggle button */
+  .theme-toggle {
+    width: 34px; height: 34px; border-radius: 50%; border: 0.5px solid var(--border2);
+    background: var(--surface2); cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    color: var(--text2); padding: 0;
+  }
+  .theme-toggle:hover { background: var(--surface); border-color: var(--text3); transform: scale(1.08); }
+  .theme-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .theme-toggle:hover svg { transform: rotate(20deg); }
+  .theme-toggle .icon-sun { display: none; }
+  .theme-toggle .icon-moon { display: block; }
+  html.dark .theme-toggle .icon-sun { display: block; }
+  html.dark .theme-toggle .icon-moon { display: none; }
+
+  *, *::before, *::after { transition: background-color 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, fill 0.3s ease, stroke 0.3s ease; }
   html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
 
   /* ── LOGIN PAGE ── */
@@ -109,7 +126,7 @@
   .btn-logout:hover { background: var(--surface2); color: var(--text); }
 
   /* ── MAIN CONTENT ── */
-  .main { padding: 24px; max-width: 1280px; margin: 0 auto; width: 100%; }
+  .main { padding: 24px; max-width: 1600px; margin: 0 auto; width: 100%; }
 
   /* ── KPI ROW ── */
   .kpi-row { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 10px; margin-bottom: 20px; }
@@ -121,6 +138,62 @@
   .kpi-sub { font-size: 11px; margin-top: 3px; }
   .kpi-bar { height: 3px; border-radius: 2px; margin-top: 8px; }
   .c-up { color: #3B6D11; } .c-dn { color: #A32D2D; } .c-nu { color: var(--text2); }
+  html.dark .c-up { color: #97C459; } html.dark .c-dn { color: #F09595; }
+  .kpi-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .kpi-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+  /* ── SORTABLE HEADERS ── */
+  thead th.sortable { cursor: pointer; user-select: none; position: relative; }
+  thead th.sortable:hover { color: var(--text); }
+  .sort-icon { font-size: 10px; margin-left: 3px; opacity: 0.4; }
+  thead th.sort-active .sort-icon { opacity: 1; color: var(--blue); }
+
+  /* ── RELANCE INDICATOR ── */
+  .relance-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; flex-shrink: 0; }
+  .relance-late { background: #E24B4A; box-shadow: 0 0 6px rgba(226,75,74,0.5); }
+  .relance-today { background: #EF9F27; box-shadow: 0 0 6px rgba(239,159,39,0.4); }
+  .relance-future { background: #639922; }
+  .relance-none { background: var(--text3); opacity: 0.3; }
+  .relance-cell { display: flex; align-items: center; gap: 2px; font-size: 12px; white-space: nowrap; }
+
+  /* ── CALL HISTORY ── */
+  .call-log-btn { padding: 4px 8px; border: 0.5px solid var(--border); border-radius: 7px; background: transparent; color: var(--text2); font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 3px; }
+  .call-log-btn:hover { background: var(--surface2); color: var(--text); }
+  .call-log-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .call-entry { padding: 10px 0; border-bottom: 0.5px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
+  .call-entry:last-child { border-bottom: none; }
+  .call-result { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .call-result-repondu { background: #D4EDDA; color: #27500A; }
+  .call-result-messagerie { background: #FAEEDA; color: #854F0B; }
+  .call-result-injoignable { background: #FCEBEB; color: #A32D2D; }
+  html.dark .call-result-repondu { background: #173404; color: #97C459; }
+  html.dark .call-result-messagerie { background: #412402; color: #FAC775; }
+  html.dark .call-result-injoignable { background: #501313; color: #F09595; }
+  .call-count { font-size: 10px; background: var(--blue-l); color: var(--blue-d); padding: 1px 5px; border-radius: 8px; font-weight: 600; min-width: 16px; text-align: center; }
+
+  /* ── KANBAN ── */
+  .kanban-board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; min-height: 500px; }
+  .kanban-col { flex: 0 0 240px; background: var(--surface2); border-radius: var(--radius-lg); padding: 12px; display: flex; flex-direction: column; }
+  .kanban-col-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .kanban-col-count { background: var(--surface); padding: 2px 8px; border-radius: 10px; font-size: 11px; color: var(--text3); }
+  .kanban-cards { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
+  .kanban-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; cursor: grab; transition: box-shadow 0.15s, transform 0.15s; }
+  .kanban-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
+  .kanban-card.dragging { opacity: 0.5; transform: rotate(2deg); }
+  .kanban-col.drag-over { background: var(--blue-l); border: 2px dashed var(--blue); }
+  .kanban-card-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .kanban-card-company { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+  .kanban-card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text3); }
+  .kanban-card-val { font-weight: 600; color: var(--text2); }
+
+  /* ── MULTI-SELECT ── */
+  .tbl-check { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; }
+  .bulk-bar { background: var(--blue); color: white; padding: 10px 16px; border-radius: var(--radius); margin-bottom: 10px; display: flex; align-items: center; gap: 12px; font-size: 13px; animation: fadeInUp 0.2s ease; }
+  .bulk-bar select, .bulk-bar button { padding: 5px 10px; border-radius: 6px; border: none; font-size: 12px; cursor: pointer; }
+  .bulk-bar select { background: rgba(255,255,255,0.2); color: white; }
+  .bulk-bar button { background: rgba(255,255,255,0.25); color: white; font-weight: 500; }
+  .bulk-bar button:hover { background: rgba(255,255,255,0.4); }
+  .bulk-bar .bulk-close { background: none; font-size: 18px; padding: 2px 6px; }
 
   /* ── PIPELINE SVG ── */
   .pipeline-card {
@@ -171,11 +244,44 @@
   .btn-add { padding: 7px 14px; border-radius: var(--radius); background: var(--blue); color: white; font-size: 12px; font-weight: 500; border: none; cursor: pointer; }
   .btn-add:hover { opacity: 0.85; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th { text-align: left; padding: 9px 14px; font-size: 11px; color: var(--text2); font-weight: 500; border-bottom: 0.5px solid var(--border); background: var(--surface2); white-space: nowrap; }
-  tbody tr { border-bottom: 0.5px solid var(--border); transition: background 0.1s; }
+  thead th { text-align: left; padding: 8px 10px; font-size: 11px; color: var(--text2); font-weight: 500; border-bottom: 0.5px solid var(--border); background: var(--surface2); white-space: nowrap; }
+  tbody tr { border-bottom: 0.5px solid var(--border); transition: background 0.1s, opacity 0.2s; }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--surface2); }
-  tbody td { padding: 10px 14px; vertical-align: middle; white-space: nowrap; }
+  tbody tr.row-late { background: rgba(226, 75, 74, 0.04); }
+  tbody tr.row-late:hover { background: rgba(226, 75, 74, 0.08); }
+  tbody tr.row-done { opacity: 0.45; }
+  tbody tr.row-done:hover { opacity: 0.7; }
+  tbody tr.row-npai { opacity: 0.35; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px); }
+  tbody tr.row-npai .inline-edit { text-decoration: line-through; color: var(--text3); }
+  tbody tr.row-npai:hover { opacity: 0.5; }
+  tbody td { padding: 7px 10px; vertical-align: middle; white-space: nowrap; }
+
+  .btn-today {
+    padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); color: var(--text); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .btn-today:hover { background: var(--surface2); }
+  .btn-today.active { background: var(--blue-l); border-color: var(--blue); color: var(--blue-d); }
+
+  /* Inline editing */
+  .inline-edit {
+    background: transparent; border: 1px solid transparent; border-radius: 6px;
+    color: var(--text); font-size: 12px; font-family: inherit; padding: 3px 6px;
+    outline: none; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    width: 100%; min-width: 0;
+  }
+  .inline-edit:hover { border-color: var(--border2); background: var(--surface2); }
+  .inline-edit:focus { border-color: var(--blue); background: var(--surface); box-shadow: 0 0 0 2px rgba(55,138,221,0.15); cursor: text; }
+  .inline-edit-sm { max-width: 70px; text-align: right; }
+  .inline-edit-note { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+  .inline-date { background: transparent; border: 1px solid transparent; border-radius: 6px; color: var(--text2); font-size: 11.5px; font-family: inherit; padding: 4px 6px; outline: none; cursor: pointer; transition: border-color 0.15s, background 0.15s; width: 84px; text-align: center; }
+  .inline-date:hover { border-color: var(--border2); background: var(--surface2); }
+  .inline-date:focus { border-color: var(--blue); background: var(--surface); }
+  .inline-select { background: transparent; border: 1px solid transparent; border-radius: 6px; color: var(--text2); font-size: 11px; font-family: inherit; padding: 3px 4px; outline: none; cursor: pointer; }
+  .inline-select:hover { border-color: var(--border2); background: var(--surface2); }
+  .inline-select:focus { border-color: var(--blue); background: var(--surface); }
   .prospect-name { display: flex; align-items: center; gap: 9px; }
   .av-sm { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; }
   .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; }
@@ -233,19 +339,19 @@
   .btn-confirm-del:hover { opacity: 0.85; }
 
   /* ── ANIMATIONS ── */
-  @keyframes pipeIn { from { opacity: 0; transform: scaleX(0.7) scaleY(0.8); } to { transform: scaleX(1) scaleY(1); } }
+  @keyframes pipeReveal { from { clip-path: inset(0 100% 0 0); opacity: 0; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .kpi { animation: fadeInUp 0.35s ease both; }
-  .kpi:nth-child(1) { animation-delay: 0.03s; }
-  .kpi:nth-child(2) { animation-delay: 0.06s; }
-  .kpi:nth-child(3) { animation-delay: 0.09s; }
-  .kpi:nth-child(4) { animation-delay: 0.12s; }
-  .kpi:nth-child(5) { animation-delay: 0.15s; }
-  .pipeline-card { animation: fadeInUp 0.4s ease 0.1s both; }
-  .bcard { animation: fadeInUp 0.4s ease 0.15s both; }
-  .table-card { animation: fadeInUp 0.4s ease 0.2s both; }
-  tbody tr { animation: fadeIn 0.3s ease both; }
+  html:not(.loaded) .kpi { animation: fadeInUp 0.35s ease both; }
+  html:not(.loaded) .kpi:nth-child(1) { animation-delay: 0.03s; }
+  html:not(.loaded) .kpi:nth-child(2) { animation-delay: 0.06s; }
+  html:not(.loaded) .kpi:nth-child(3) { animation-delay: 0.09s; }
+  html:not(.loaded) .kpi:nth-child(4) { animation-delay: 0.12s; }
+  html:not(.loaded) .kpi:nth-child(5) { animation-delay: 0.15s; }
+  html:not(.loaded) .pipeline-card { animation: fadeInUp 0.4s ease 0.1s both; }
+  html:not(.loaded) .bcard { animation: fadeInUp 0.4s ease 0.15s both; }
+  html:not(.loaded) .table-card { animation: fadeInUp 0.4s ease 0.2s both; }
+  html:not(.loaded) tbody tr { animation: fadeIn 0.3s ease both; }
   .badge-select { transition: background 0.2s, color 0.2s; }
   .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 18px; }
   .mfield { margin-bottom: 14px; }
@@ -282,7 +388,7 @@
     display: flex; flex-direction: column;
     overflow: hidden; z-index: 310;
     position: fixed; top: 52px; left: 0; bottom: 0;
-    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, border-color 0.3s ease;
   }
   .sidebar.open {
     width: 240px;
@@ -343,7 +449,47 @@
     .tbl-search { width: 140px; }
     .sidebar.open { width: 220px; }
   }
+  
+  /* ── FLATPICKR CUSTOM THEME ── */
+  .flatpickr-calendar {
+    background: var(--surface) !important;
+    border: 0.5px solid var(--border2) !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
+    font-family: inherit !important;
+    border-radius: var(--radius-lg) !important;
+    color: var(--text) !important;
+  }
+  .flatpickr-day { color: var(--text) !important; border-radius: var(--radius) !important; }
+  .flatpickr-day:hover, .flatpickr-day:focus { background: var(--surface2) !important; border-color: var(--surface2) !important; color: var(--text) !important; }
+  .flatpickr-day.selected { background: var(--blue) !important; border-color: var(--blue) !important; color: white !important; }
+  .flatpickr-month, .flatpickr-current-month, .flatpickr-weekday { color: var(--text) !important; fill: var(--text) !important; }
+  .flatpickr-weekday { font-weight: 600 !important; color: var(--text2) !important; }
+  .flatpickr-day.today { border-color: var(--blue) !important; }
+  .flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: var(--blue) !important; }
+
+  /* ── DRIVER.JS THEME ── */
+  .driver-popover {
+    background: var(--surface) !important; color: var(--text) !important;
+    border: 0.5px solid var(--border2) !important; font-family: inherit !important;
+    border-radius: var(--radius-lg) !important; box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
+  }
+  .driver-popover-title { font-weight: 700 !important; font-size: 16px !important; color: var(--text) !important; margin-bottom: 8px !important; }
+  .driver-popover-description { color: var(--text2) !important; font-size: 13px !important; line-height: 1.5 !important; }
+  .driver-popover-footer { display: flex !important; margin-top: 16px !important; }
+  .driver-popover-next-btn, .driver-popover-prev-btn {
+    background: var(--surface2) !important; color: var(--text) !important;
+    border: none !important; text-shadow: none !important; border-radius: 6px !important;
+  }
+  .driver-popover-next-btn:hover, .driver-popover-prev-btn:hover { background: var(--border2) !important; }
 </style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/fr.js"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -391,6 +537,10 @@
       <div class="nav-badge" id="pageBadge">Dashboard</div>
     </div>
     <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Changer le thème">
+        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
     </div>
   </nav>
 
@@ -407,6 +557,10 @@
         <button class="sidebar-item active" onclick="switchPage('dashboard', this)">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/></svg>
           <span class="item-label">Dashboard</span>
+        </button>
+        <button class="sidebar-item" onclick="switchPage('kanban', this)">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>
+          <span class="item-label">Kanban</span>
         </button>
         <button class="sidebar-item" onclick="switchPage('import-export', this)">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -427,6 +581,8 @@
     <!-- ══ PAGE: DASHBOARD ══ -->
     <div class="page active" id="page-dashboard">
 
+    <!-- KPI ROW -->
+    <div class="kpi-row" id="kpiRow"></div>
 
     <!-- PIPELINE SANKEY -->
     <div class="pipeline-card">
@@ -458,6 +614,13 @@
         <div class="ct">Prospects</div>
         <div class="table-controls">
           <input class="tbl-search" type="text" placeholder="Rechercher..." id="searchQ" oninput="renderTable()"/>
+          <select class="tbl-filter" id="filterDate" onchange="renderTable()">
+            <option value="">Toutes les dates</option>
+            <option value="today">Aujourd'hui</option>
+            <option value="week">Cette semaine</option>
+            <option value="month">Ce mois</option>
+            <option value="dormant">Inactifs >7j</option>
+          </select>
           <select class="tbl-filter" id="filterStatus" onchange="renderTable()">
             <option value="">Tous les statuts</option>
             <option value="appeler">À appeler</option>
@@ -474,21 +637,27 @@
             <option value="Édouard">Édouard</option>
             <option value="Maxence">Maxence</option>
           </select>
+          <button class="btn-today" onclick="exportTodayCSV()" title="Exporter le bilan d'appels du jour">Bilan CSV</button>
+          <button class="btn-today" id="btnFilterToday" onclick="toggleTodayFilter()">Ma liste du jour</button>
+          <button class="btn-today" style="background:var(--blue-l);color:var(--blue-d);border-color:var(--blue)" onclick="addFastRow()" title="Ajouter une ligne vierge en haut du tableau en 1 clic">Ligne Rapide</button>
           <button class="btn-add" onclick="openModal()">+ Ajouter</button>
         </div>
       </div>
+      <div id="bulkBar"></div>
       <div style="overflow-x:auto">
         <table>
           <thead>
             <tr>
-              <th>Prospect</th>
-              <th>Entreprise</th>
+              <th style="width:30px"><input type="checkbox" class="tbl-check" id="checkAll" onchange="toggleAllChecks(this.checked)"/></th>
+              <th class="sortable" onclick="sortTable('nom')">Prospect <span class="sort-icon" id="sort-nom"></span></th>
+              <th class="sortable" onclick="sortTable('telephone')">Téléphone <span class="sort-icon" id="sort-telephone"></span></th>
+              <th class="sortable" onclick="sortTable('entreprise')">Entreprise <span class="sort-icon" id="sort-entreprise"></span></th>
               <th>Statut</th>
-              <th>Source</th>
-              <th>Valeur (€)</th>
-              <th>Score</th>
-              <th>Responsable</th>
-              <th>Dernier contact</th>
+              <th class="sortable" onclick="sortTable('valeur')">Valeur (€) <span class="sort-icon" id="sort-valeur"></span></th>
+              <th class="sortable" onclick="sortTable('score')">Score <span class="sort-icon" id="sort-score"></span></th>
+              <th class="sortable" onclick="sortTable('resp')">Responsable <span class="sort-icon" id="sort-resp"></span></th>
+              <th class="sortable" onclick="sortTable('date')">Dernier contact <span class="sort-icon" id="sort-date"></span></th>
+              <th class="sortable" onclick="sortTable('dateRelance')">Relance <span class="sort-icon" id="sort-dateRelance"></span></th>
               <th>Note</th>
               <th>Actions</th>
             </tr>
@@ -511,6 +680,16 @@
     </div>
 
     </div><!-- /page-dashboard -->
+
+    <!-- ══ PAGE: KANBAN ══ -->
+    <div class="page" id="page-kanban">
+      <div class="pipeline-card">
+        <div class="card-header">
+          <div class="card-title">Vue Kanban</div>
+        </div>
+        <div class="kanban-board" id="kanbanBoard"></div>
+      </div>
+    </div><!-- /page-kanban -->
 
     <!-- ══ PAGE: IMPORT / EXPORT ══ -->
     <div class="page" id="page-import-export">
@@ -601,17 +780,6 @@
               <button class="btn-add" style="background:var(--red)" onclick="if(confirm('Réinitialiser toutes les données ? Cette action est irréversible.')) { prospects=getDefaultProspects(); renderAll(); saveData(); }">Réinitialiser les données</button>
             </div>
           </div>
-
-          <!-- À venir -->
-          <div class="bcard">
-            <div class="bcard-title">À venir</div>
-            <div style="font-size:13px;color:var(--text2);display:flex;flex-direction:column;gap:8px">
-              <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0"></span> Connexion Firebase (base de données distante)</div>
-              <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0"></span> Authentification (login / rôles)</div>
-              <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0"></span> Notifications de relance</div>
-              <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0"></span> Vue Kanban drag & drop</div>
-            </div>
-          </div>
         </div>
       </div>
     </div><!-- /page-parametres -->
@@ -634,6 +802,10 @@
       <div class="mfield">
         <label>Prénom Nom</label>
         <input type="text" id="mNom" placeholder="Marie Durand"/>
+      </div>
+      <div class="mfield">
+        <label>Téléphone</label>
+        <input type="tel" id="mTelephone" placeholder="06 12 34 56 78"/>
       </div>
       <div class="mfield">
         <label>Entreprise</label>
@@ -682,6 +854,10 @@
         <label>Dernier contact</label>
         <input type="date" id="mDate"/>
       </div>
+      <div class="mfield">
+        <label>Prochaine relance</label>
+        <input type="date" id="mRelance"/>
+      </div>
     </div>
     <div class="mfield">
       <label>Note</label>
@@ -709,11 +885,36 @@
   </div>
 </div>
 
+<!-- ══ CALL HISTORY MODAL ══ -->
+<div class="modal-bg" id="callModalBg">
+  <div class="modal" style="max-width:520px">
+    <h3 id="callModalTitle">Journal d'appels</h3>
+    <div style="border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px;background:var(--surface2)">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">Nouvel appel</div>
+      <div class="modal-grid">
+        <div class="mfield"><label>Date</label><input type="date" id="callDate"/></div>
+        <div class="mfield"><label>Durée (min)</label><input type="number" id="callDuree" placeholder="5" min="0"/></div>
+        <div class="mfield"><label>Résultat</label>
+          <select id="callResultat">
+            <option value="repondu">Répondu</option>
+            <option value="messagerie">Messagerie</option>
+            <option value="injoignable">Injoignable</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="mfield"><label>Note</label><input type="text" id="callNote" placeholder="Résumé..."/></div>
+      </div>
+      <button class="btn-save" onclick="addCall()" style="width:100%;margin-top:8px">+ Ajouter l'appel</button>
+    </div>
+    <div id="callHistory" style="max-height:280px;overflow-y:auto"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeCallModal()">Fermer</button></div>
+  </div>
+</div>
 <!-- ══════════════════════════════════════
      SCRIPTS
 ══════════════════════════════════════ -->
 <script>
-// ─── FIREBASE INIT ───
+// ─── FIREBASE SIMULATION (IF NEEDED) ───
 const firebaseConfig = {
   apiKey: "AIzaSyC0mvY2HG0x5fpKUYWx1Bs9lKwr6K8I6Yg",
   authDomain: "crm-call-synaptics.firebaseapp.com",
@@ -728,17 +929,7 @@ const db = firebase.firestore();
 
 const auth = firebase.auth();
 
-// Écoute l'état d'authentification
-auth.onAuthStateChanged(function(user) {
-  if (user) {
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('appPage').style.display = 'flex';
-    loadProspects();
-  } else {
-    document.getElementById('loginPage').style.display = '';
-    document.getElementById('appPage').style.display = 'none';
-  }
-});
+// ── AUTH BYPASS: login skipped, data loaded at end of script ──
 
 function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
@@ -770,6 +961,17 @@ function doLogin() {
 function doLogout() {
   auth.signOut();
 }
+
+auth.onAuthStateChanged(function(user) {
+  if (user) {
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('appPage').style.display = 'flex';
+    if (!dbReady) loadProspects();
+  } else {
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('appPage').style.display = 'none';
+  }
+});
 
 var prospects = [];
 var dbReady = false;
@@ -821,6 +1023,10 @@ function loadProspects() {
     }
     dbReady = true;
     renderAll();
+    setTimeout(() => {
+      document.documentElement.classList.add('loaded');
+      if (!localStorage.getItem('synaptic_tour_completed')) startTour();
+    }, 500);
   }).catch(function(e) {
     console.warn('Firebase load error, falling back to localStorage:', e);
     try {
@@ -830,6 +1036,10 @@ function loadProspects() {
       if (savedTeam) teamMembers = JSON.parse(savedTeam);
     } catch(e2) { prospects = getDefaultProspects(); }
     renderAll();
+    setTimeout(() => {
+      document.documentElement.classList.add('loaded');
+      if (!localStorage.getItem('synaptic_tour_completed')) startTour();
+    }, 500);
   });
 }
 
@@ -845,10 +1055,10 @@ const subNames = { rdv_planifie: 'RDV planifié', perdu: 'Perdu' };
 const stageKeys = pipeKeys;
 const stageNames = pipeNames;
 const pColors = [
-  { fill:'#3B82F6', stroke:'#1E40AF', bar:'#3B82F6' },
-  { fill:'#2563EB', stroke:'#1E3A8A', bar:'#2563EB' },
-  { fill:'#1D4ED8', stroke:'#172554', bar:'#1D4ED8' },
-  { fill:'#1E40AF', stroke:'#172554', bar:'#1E40AF' },
+  { fill:'#A78BFA', stroke:'#A78BFA' },
+  { fill:'#8B5CF6', stroke:'#8B5CF6' },
+  { fill:'#7C3AED', stroke:'#7C3AED' },
+  { fill:'#6D28D9', stroke:'#6D28D9' },
 ];
 var currentData = [];
 let selStage = null;
@@ -869,11 +1079,42 @@ function computePipelineData() {
 }
 
 // ─── RENDER ALL ───
-function renderAll() { computePipelineData(); renderKPI(); renderPipeline(); renderConv(); renderTable(); renderTeamStats(); saveData(); }
+function renderAll() { computePipelineData(); renderKPI(); renderPipeline(); renderConv(); renderTable(); renderTeamStats(); renderKanban(); saveData(); }
 
 // ─── KPI ───
 function renderKPI() {
-  // KPI cards removed — data shown in pipeline labels
+  const today = new Date().toISOString().split('T')[0];
+  const actifs = prospects.filter(p => p.statut !== 'signe' && p.statut !== 'perdu');
+  const valeurPipeline = actifs.reduce((s,p) => s + (Number(p.valeur)||0), 0);
+  const convGlobal = prospects.length > 0 ? Math.round(prospects.filter(p=>p.statut==='signe').length / prospects.length * 100) : 0;
+  const callsToday = prospects.reduce((s,p) => s + (p.appels||[]).filter(a=>a.date===today).length, 0);
+  // Late relances
+  const enRetard = prospects.filter(p => p.dateRelance && p.dateRelance < today && p.statut !== 'signe' && p.statut !== 'perdu').length;
+
+  const kpis = [
+    { label:'Prospects actifs', val:actifs.length, icon:'<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>', bg:'var(--blue-l)', fg:'var(--blue-d)' },
+    { label:'Pipeline total', val:valeurPipeline.toLocaleString('fr-FR')+' €', icon:'<svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>', bg:'var(--green-l)', fg:'var(--green-d)' },
+    { label:'Conversion globale', val:convGlobal+'%', icon:'<svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', bg:'var(--purple-l)', fg:'var(--purple-d)', sub: convGlobal>=20?'c-up':'c-dn' },
+    { label:'Appels aujourd\'hui', val:callsToday, icon:'<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>', bg:'var(--teal-l)', fg:'var(--teal-d)' },
+    { label:'Relances en retard', val:enRetard, icon:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', bg: enRetard>0?'var(--red-l)':'var(--green-l)', fg: enRetard>0?'var(--red-d)':'var(--green-d)' },
+  ];
+
+  document.getElementById('kpiRow').innerHTML = kpis.map(k => `<div class="kpi">
+    <div class="kpi-label"><span>${k.label}</span><div class="kpi-icon" style="background:${k.bg};color:${k.fg}">${k.icon}</div></div>
+    <div class="kpi-val">${k.val}</div>
+  </div>`).join('');
+}
+
+// ─── SORT ───
+var sortCol = null, sortDir = 'asc';
+function sortTable(col) {
+  if (sortCol === col) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+  else { sortCol = col; sortDir = 'asc'; }
+  // Update sort icons
+  document.querySelectorAll('.sort-icon').forEach(el => { el.textContent = ''; el.parentElement.classList.remove('sort-active'); });
+  const icon = document.getElementById('sort-'+col);
+  if (icon) { icon.textContent = sortDir === 'asc' ? '▲' : '▼'; icon.parentElement.classList.add('sort-active'); }
+  renderTable();
 }
 
 function selectStage(i) {
@@ -886,25 +1127,33 @@ const ns = 'http://www.w3.org/2000/svg';
 function renderPipeline() {
   const svg = document.getElementById('pipeline');
   svg.innerHTML = '';
-  const W=800, H=220, mid=H/2, max=currentData[0];
-  const max2 = max||1;
-  const sc = v => (v/max2)*(H*0.78);
+  const W=800, H=220, mid=H/2, max=currentData[0]||1;
+  // Visual heights with minimum funnel taper (each stage ≤ 85% of previous visually)
+  const rawH = currentData.map(v => (v/max)*(H*0.78));
+  const visH = [rawH[0]];
+  for (let j=1; j<rawH.length; j++) { visH[j] = Math.min(rawH[j], visH[j-1]*0.85); }
 
   for (let i=0; i<currentData.length-1; i++) {
-    const sv=currentData[i], ev=currentData[i+1];
+    const sv=visH[i], ev=visH[i+1];
     const x1=i*200, x2=(i+1)*200;
-    const sH=sc(sv), eH=sc(ev);
-    const sT=mid-sH/2, sB=mid+sH/2, eT=mid-eH/2, eB=mid+eH/2;
+    const sT=mid-sv/2, sB=mid+sv/2, eT=mid-ev/2, eB=mid+ev/2;
     const cx=(x1+x2)/2;
     const d=`M ${x1} ${sT} C ${cx} ${sT},${cx} ${eT},${x2} ${eT} L ${x2} ${eB} C ${cx} ${eB},${cx} ${sB},${x1} ${sB} Z`;
     const op = selStage===null||selStage===i||selStage===i+1?'0.88':'0.22';
     const p = document.createElementNS(ns,'path');
     p.setAttribute('d',d); p.setAttribute('fill',pColors[i].fill);
-    p.setAttribute('stroke',pColors[i].stroke); p.setAttribute('stroke-width','1.2');
+    p.setAttribute('stroke',pColors[i].stroke); p.setAttribute('stroke-width','0.5');
     p.setAttribute('cursor','pointer');
-    p.style.opacity = op;
-    p.style.animation = `pipeIn 0.5s ease ${i * 0.12}s both`;
     p.dataset.baseOpacity = op;
+    
+    if (!window.pipeAnimated) {
+      p.style.opacity = '0';
+      p.style.animation = `pipeReveal 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${i * 0.25}s forwards`;
+      p.addEventListener('animationend', () => { p.style.opacity = p.dataset.baseOpacity; });
+    } else {
+      p.style.opacity = op;
+    }
+    
     p.addEventListener('mouseenter', e=>{ p.style.opacity='1'; showTT(e,i); });
     p.addEventListener('mouseleave', e=>{ p.style.opacity=p.dataset.baseOpacity; hideTT(); });
     p.addEventListener('mousemove',  e=>moveTT(e));
@@ -921,11 +1170,20 @@ function renderPipeline() {
     t.setAttribute('y', mid+5);
     t.setAttribute('text-anchor', 'middle');
     t.setAttribute('font-size','12'); t.setAttribute('font-weight','800');
-    t.setAttribute('fill','#ffffff'); t.setAttribute('opacity','0.9');
+    t.setAttribute('fill','#ffffff'); 
+    t.style.pointerEvents = 'none';
+    t.style.userSelect = 'none';
+    if (!window.pipeAnimated) {
+      t.setAttribute('opacity','0');
+      t.style.animation = `fadeIn 0.2s ease ${i * 0.25 + 0.15}s forwards`;
+    } else {
+      t.setAttribute('opacity','1');
+    }
     t.textContent = pct + '%';
     svg.appendChild(t);
   }
 
+  window.pipeAnimated = true;
   const labDiv = document.getElementById('stageLabels');
   labDiv.innerHTML = stageNames.map((n,i)=>`<div class="sl"><span>${n}</span><strong>${currentData[i]}</strong></div>`).join('');
 }
@@ -955,11 +1213,17 @@ function renderTeamStats() {
   if (!el) return;
   el.innerHTML = teamMembers.map(m => {
     const mine = prospects.filter(p => p.resp === m.name);
-    const actifs = mine.filter(p => p.statut !== 'perdu' && p.statut !== 'gagne').length;
-    const gagnes = mine.filter(p => p.statut === 'gagne').length;
+    const actifs = mine.filter(p => p.statut !== 'perdu' && p.statut !== 'signe').length;
+    const gagnes = mine.filter(p => p.statut === 'signe').length;
     const conv = mine.length > 0 ? Math.round((gagnes / mine.length) * 100) : 0;
     const cls = conv >= 25 ? 'c-up' : conv >= 10 ? 'c-nu' : 'c-dn';
-    return `<div class="resp-item"><div class="av" style="background:${m.bg};color:${m.fg}">${m.name[0]}</div><div class="resp-name">${m.name}</div><div class="resp-stats"><div class="rs"><b>${actifs}</b> actifs</div><div class="rs ${cls}"><b>${conv}%</b> conv.</div></div></div>`;
+    
+    // Streak gamification
+    const today = new Date().toISOString().split('T')[0];
+    const callsToday = mine.reduce((s,p) => s + (p.appels||[]).filter(a=>a.date===today).length, 0);
+    const fire = callsToday >= 20 ? ' <span title="En feu ! Plus de 20 appels passés aujourd\'hui" style="font-size:14px;">🔥</span>' : '';
+    
+    return `<div class="resp-item"><div class="av" style="background:${m.bg};color:${m.fg}">${m.name[0]}</div><div class="resp-name">${m.name}${fire}</div><div class="resp-stats"><div class="rs"><b>${actifs}</b> actifs</div><div class="rs ${cls}"><b>${conv}%</b> conv.</div></div></div>`;
   }).join('');
 }
 
@@ -986,7 +1250,7 @@ function renderConv() {
 }
 
 // ─── TABLE ───
-const statusMap={appeler:'À appeler',appele:'Appelé',repondu:'Répondu',rdv_planifie:'RDV planifié',rdv_effectue:'RDV effectué',signe:'Signé',perdu:'Perdu'};
+const statusMap={appeler:'À appeler',appele:'Appelé',repondu:'Répondu',rdv_planifie:'RDV planifié',rdv_effectue:'RDV effectué',signe:'Signé',perdu:'Perdu',npai:'Faux N°/NPAI'};
 const badgeCss={
   appeler:`background:#E6F1FB;color:#185FA5`,
   appele:`background:#EEEDFE;color:#534AB7`,
@@ -994,49 +1258,194 @@ const badgeCss={
   rdv_planifie:`background:#FFF3CD;color:#856404`,
   rdv_effectue:`background:#EAF3DE;color:#0F6E56`,
   signe:`background:#D4EDDA;color:#27500A`,
-  perdu:`background:#FCEBEB;color:#A32D2D`
+  perdu:`background:#FCEBEB;color:#A32D2D`,
+  npai:`background:#E6E6E6;color:#5A5A5A;text-decoration:line-through;`
 };
+
+let showOnlyToday = false;
+function toggleTodayFilter() {
+  showOnlyToday = !showOnlyToday;
+  const btn = document.getElementById('btnFilterToday');
+  if (showOnlyToday) btn.classList.add('active'); else btn.classList.remove('active');
+  renderTable();
+}
 
 function renderTable() {
   const q  = document.getElementById('searchQ').value.toLowerCase();
   const st = document.getElementById('filterStatus').value;
   const rs = document.getElementById('filterResp').value;
-  const rows = prospects.filter(p => {
+  const today = new Date().toISOString().split('T')[0];
+
+  let rows = prospects.filter(p => {
     if (st && p.statut !== st) return false;
     if (rs && p.resp !== rs) return false;
-    if (q && !p.nom.toLowerCase().includes(q) && !p.entreprise.toLowerCase().includes(q)) return false;
+    if (showOnlyToday) {
+      if (p.statut === 'signe' || p.statut === 'perdu') return false;
+      if (!p.dateRelance || p.dateRelance > today) return false;
+    }
+    if (q && !p.nom.toLowerCase().includes(q) && !p.entreprise.toLowerCase().includes(q)
+        && !(p.source||'').toLowerCase().includes(q) && !(p.resp||'').toLowerCase().includes(q)
+        && !(p.note||'').toLowerCase().includes(q) && !(p.telephone||'').replace(/\s+/g,'').includes(q.replace(/\s+/g,''))) return false;
+    // Date filter
+    const df = document.getElementById('filterDate').value;
+    if (df) {
+      const td = new Date().toISOString().split('T')[0];
+      if (df === 'today' && p.date !== td) return false;
+      if (df === 'week') { const w = new Date(Date.now()-7*86400000).toISOString().split('T')[0]; if (p.date < w) return false; }
+      if (df === 'month') { const m = new Date(); m.setDate(1); if (p.date < m.toISOString().split('T')[0]) return false; }
+      if (df === 'dormant') { const w = new Date(Date.now()-7*86400000).toISOString().split('T')[0]; if (p.date >= w) return false; }
+    }
     return true;
   });
+  // Sort
+  if (sortCol) {
+    rows.sort((a,b) => {
+      let va = a[sortCol], vb = b[sortCol];
+      if (sortCol === 'valeur' || sortCol === 'score') { va = Number(va)||0; vb = Number(vb)||0; }
+      else { va = (va||'').toString().toLowerCase(); vb = (vb||'').toString().toLowerCase(); }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  } else {
+    // Default smart sorting by urgency
+    rows.sort((a,b) => {
+      const aDone = (a.statut==='signe'||a.statut==='perdu'||a.statut==='npai'), bDone = (b.statut==='signe'||b.statut==='perdu'||b.statut==='npai');
+      if (aDone && !bDone) return 1;
+      if (!aDone && bDone) return -1;
+      
+      const aRel = a.dateRelance || '9999-99-99', bRel = b.dateRelance || '9999-99-99';
+      if (aRel < bRel) return -1;
+      if (aRel > bRel) return 1;
+      return 0;
+    });
+  }
   const limit = parseInt(document.getElementById('rowLimit').value) || 0;
   const display = limit > 0 ? rows.slice(0, limit) : rows;
   const body = document.getElementById('tableBody');
   body.innerHTML = display.map(p => {
-    const [bg, fg] = p.av.split(':');
+    const [bg, fg] = (p.av || '#E6F1FB:#185FA5').split(':');
     const sc = p.score > 70 ? '#639922' : p.score > 40 ? '#BA7517' : '#E24B4A';
     const dateStr = p.date ? new Date(p.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '—';
-    return `<tr>
-      <td><div class="prospect-name"><div class="av-sm" style="background:${bg};color:${fg}">${p.initiales}</div>${p.nom}</div></td>
-      <td style="color:var(--text2)">${p.entreprise}</td>
-      <td><select class="badge-select" style="${badgeCss[p.statut]||''}" onchange="changeStatus('${p.id}',this.value)">${Object.keys(statusMap).map(k=>`<option value="${k}"${k===p.statut?' selected':''}>${statusMap[k]}</option>`).join('')}</select></td>
-      <td style="color:var(--text2);font-size:12px">${p.source}</td>
-      <td style="font-weight:500">${Number(p.valeur).toLocaleString('fr-FR')} €</td>
-      <td><div class="score-wrap"><div class="score-track"><div class="score-fill" style="width:${p.score}%;background:${sc}"></div></div><span style="font-size:12px;color:var(--text2)">${p.score}</span></div></td>
-      <td style="color:var(--text2)">${p.resp}</td>
-      <td style="color:var(--text2)">${dateStr}</td>
-      <td style="color:var(--text2);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis">${p.note||'—'}</td>
+    // Relance indicator
+    let relanceHtml = `<div class="relance-cell"><span class="relance-dot relance-none"></span><input type="date" class="inline-date" value="${p.dateRelance||''}" onchange="updateInline('${p.id}', 'dateRelance', this.value)"/></div>`;
+    if (p.dateRelance) {
+      const cls = p.dateRelance < today ? 'relance-late' : p.dateRelance === today ? 'relance-today' : 'relance-future';
+      relanceHtml = `<div class="relance-cell"><span class="relance-dot ${cls}"></span><input type="date" class="inline-date" value="${p.dateRelance}" onchange="updateInline('${p.id}', 'dateRelance', this.value)"/></div>`;
+    }
+    const callCount = (p.appels||[]).length;
+    const isLate = p.dateRelance && p.dateRelance < today && p.statut !== 'signe' && p.statut !== 'perdu' && p.statut !== 'npai';
+    const isDone = p.statut === 'signe' || p.statut === 'perdu';
+    const isNpai = p.statut === 'npai';
+    let rowClass = isNpai ? 'row-npai' : (isLate ? 'row-late' : (isDone ? 'row-done' : ''));
+
+    return `<tr class="${rowClass}" data-rid="${p.id}">
+      <td><input type="checkbox" class="tbl-check row-check" data-id="${p.id}" onchange="updateBulkBar()"/></td>
+      <td><div class="prospect-name"><div class="av-sm" style="background:${bg};color:${fg}">${p.initiales||'+'}</div><input class="inline-edit js-foc-nom" style="width:130px;font-weight:500" value="${(p.nom||'').replace(/"/g, '&quot;')}" onchange="updateInline('${p.id}', 'nom', this.value)" onkeydown="handleCellKey(event, '${p.id}', 'nom')" /></div></td>
+      <td><div style="display:flex;align-items:center;gap:6px"><input type="tel" class="inline-edit js-foc-telephone" style="width:105px;color:var(--blue);font-family:monospace;letter-spacing:0.5px" value="${(p.telephone||'').replace(/"/g, '&quot;')}" placeholder="N° Tél..." onchange="updateInline('${p.id}', 'telephone', this.value)" onkeydown="handleCellKey(event, '${p.id}', 'telephone')" /><a href="tel:${p.telephone||''}" title="Appeler ce numéro" style="color:var(--teal);display:${p.telephone?'flex':'none'};align-items:center" tabindex="-1"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></a></div></td>
+      <td><input class="inline-edit js-foc-entreprise" style="width:110px;color:var(--text2)" value="${(p.entreprise||'').replace(/"/g, '&quot;')}" onchange="updateInline('${p.id}', 'entreprise', this.value)" onkeydown="handleCellKey(event, '${p.id}', 'entreprise')" /></td>
+      <td><select class="badge-select js-foc-statut" style="${badgeCss[p.statut]||''}" onchange="changeStatus('${p.id}',this.value)" onkeydown="handleCellKey(event, '${p.id}', 'statut')">${Object.keys(statusMap).map(k=>`<option value="${k}"${k===p.statut?' selected':''}>${statusMap[k]}</option>`).join('')}</select></td>
+      <td style="white-space:nowrap"><input type="number" class="inline-edit inline-edit-sm js-foc-valeur" style="font-weight:500" value="${p.valeur||0}" onchange="updateInline('${p.id}', 'valeur', this.value)" onkeydown="handleCellKey(event, '${p.id}', 'valeur')" /> €</td>
+      <td><div class="score-wrap"><div class="score-track"><div class="score-fill" style="width:${p.score||0}%;background:${sc}"></div></div><input type="number" class="inline-edit js-foc-score" style="width:40px;padding:2px;font-size:11px;text-align:right" value="${p.score||0}" min="0" max="100" onchange="updateInline('${p.id}', 'score', this.value)" onkeydown="handleCellKey(event, '${p.id}', 'score')" /></div></td>
+      <td><select class="inline-select js-foc-resp" onchange="updateInline('${p.id}', 'resp', this.value)" onkeydown="handleCellKey(event, '${p.id}', 'resp')">${['Grégory','Édouard','Maxence'].map(r=>`<option ${p.resp===r?'selected':''}>${r}</option>`).join('')}</select></td>
+      <td><input type="date" class="inline-date js-foc-date" value="${p.date||''}" onchange="updateInline('${p.id}', 'date', this.value)" onkeydown="handleCellKey(event, '${p.id}', 'date')" /></td>
+      <td>${relanceHtml}</td>
+      <td><input class="inline-edit inline-edit-note js-foc-note" value="${(p.note||'').replace(/"/g, '&quot;')}" placeholder="Ajouter une note..." onchange="updateInline('${p.id}', 'note', this.value)" onkeydown="handleCellKey(event, '${p.id}', 'note')" /></td>
       <td><div class="act-btns">
-        <button class="act-btn" onclick="editProspect('${p.id}')">Modifier</button>
+        <button class="call-log-btn" onclick="openCallModal('${p.id}')" title="Journal d'appels"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>${callCount>0?'<span class="call-count">'+callCount+'</span>':''}</button>
+        <button class="act-btn" onclick="duplicateProspect('${p.id}')">Dupli.</button>
         <button class="act-btn" onclick="deleteProspect('${p.id}')">Suppr.</button>
       </div></td>
     </tr>`;
   }).join('');
+
+  if (typeof flatpickr !== 'undefined') {
+    flatpickr(".inline-date", { locale: "fr", dateFormat: "Y-m-d", allowInput: true });
+  }
+
+  if (focusNextCell) {
+    setTimeout(() => {
+      const parentRow = document.querySelector(`tr[data-rid="${focusNextCell.id}"]`);
+      if (parentRow) {
+        const input = parentRow.querySelector(`.js-foc-${focusNextCell.field}`);
+        if (input) input.focus();
+      }
+    }, 10);
+    focusNextCell = null;
+  }
+
   const suffix = display.length !== rows.length ? ` sur ${rows.length}` : '';
-  document.getElementById('tblCount').textContent = `${display.length} prospect${display.length>1?'s':''} affiché${display.length>1?'s':''}${suffix}`;
+  const tc = document.getElementById('tblCount');
+  if (tc) tc.textContent = `${display.length} prospect${display.length>1?'s':''} affiché${display.length>1?'s':''}${suffix}`;
+  
+  // reset checkAll
+  const ca = document.getElementById('checkAll'); if(ca) ca.checked = false;
+  updateBulkBar();
 }
 
 function changeStatus(id, newStatus) {
   const p = prospects.find(x => x.id === id);
-  if (p) { p.statut = newStatus; renderAll(); }
+  if (p) {
+    if ((newStatus === 'signe' || newStatus === 'rdv_planifie') && p.statut !== newStatus) {
+      if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+    }
+    p.statut = newStatus;
+    renderAll();
+  }
+}
+
+function formatPhone(v) {
+  v = v.replace(/\D/g, '');
+  if (v.length > 10 && v.startsWith('33')) v = '0' + v.substring(2);
+  if (v.length === 10) return v.replace(/(\d{2})(?=\d)/g, '$1 ').trim();
+  return v;
+}
+
+function updateInline(id, field, value) {
+  const p = prospects.find(x => x.id === id);
+  if (!p) return;
+  if (field === 'valeur' || field === 'score') {
+    p[field] = Number(value) || 0;
+    if (field === 'score') p[field] = Math.min(100, Math.max(0, p[field]));
+  } else if (field === 'telephone') {
+    p[field] = formatPhone(value);
+  } else if (field === 'nom') {
+    p.nom = value;
+    const { initiales, av } = avatarFromName(value);
+    p.initiales = initiales;
+    p.av = av;
+  } else {
+    p[field] = value;
+  }
+  renderAll(); // Renders everything so DOM is up to date, however focus will be lost. This is acceptable for direct updates replacing static text.
+}
+
+let focusNextCell = null; // { id, field }
+function handleCellKey(e, id, field) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const p = prospects.find(x => x.id === id);
+    if (!p) return;
+    
+    // Auto-save the input (since we prevent default)
+    if (field === 'telephone') p[field] = formatPhone(e.target.value);
+    else if (field === 'valeur' || field === 'score') p[field] = Number(e.target.value) || 0;
+    else p[field] = e.target.value;
+
+    const tr = e.target.closest('tr');
+    if (tr && tr.parentNode) {
+      const trs = Array.from(tr.parentNode.children);
+      const idx = trs.indexOf(tr);
+      const direction = e.shiftKey ? -1 : 1;
+      const nextIdx = idx + direction;
+      
+      if (nextIdx >= 0 && nextIdx < trs.length) {
+        const nextId = trs[nextIdx].dataset.rid;
+        focusNextCell = { id: nextId, field: field };
+      }
+    }
+    renderAll();
+  }
 }
 
 // ─── MODAL ───
@@ -1045,6 +1454,7 @@ function openModal(p=null) {
   editId = p ? p.id : null;
   document.getElementById('modalTitle').textContent = p ? 'Modifier le prospect' : 'Nouveau prospect';
   document.getElementById('mNom').value       = p?.nom||'';
+  document.getElementById('mTelephone').value = p?.telephone||'';
   document.getElementById('mEntreprise').value= p?.entreprise||'';
   document.getElementById('mStatut').value    = p?.statut||'new';
   document.getElementById('mSource').value    = p?.source||'LinkedIn';
@@ -1052,18 +1462,50 @@ function openModal(p=null) {
   document.getElementById('mScore').value     = p?.score||'';
   document.getElementById('mResp').value      = p?.resp||'Grégory';
   document.getElementById('mDate').value      = p?.date||new Date().toISOString().split('T')[0];
+  document.getElementById('mRelance').value   = p?.dateRelance||'';
   document.getElementById('mNote').value      = p?.note||'';
+  
+  if (typeof flatpickr !== 'undefined') {
+    flatpickr("#mDate, #mRelance", { locale: "fr", dateFormat: "Y-m-d", allowInput: true });
+  }
+
   document.getElementById('modalBg').classList.add('open');
 }
 function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
 document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
 
 function avatarFromName(nom) {
-  const parts = nom.trim().split(' ');
+  const parts = (nom||'').trim().split(' ');
   const ini = (parts[0]?.[0]||'') + (parts[1]?.[0]||'');
   const avList=['#B5D4F4:#0C447C','#C0DD97:#27500A','#CECBF6:#3C3489','#FAC775:#633806','#9FE1CB:#0F6E56','#F7C1C1:#791F1F'];
-  const av = avList[ini.charCodeAt(0)%avList.length];
-  return { initiales: ini.toUpperCase(), av };
+  const charCode = ini.charCodeAt(0) || 0;
+  const av = avList[charCode % avList.length];
+  return { initiales: ini.toUpperCase() || '+', av };
+}
+
+function addFastRow() {
+  const newId = Date.now().toString();
+  const today = new Date().toISOString().split('T')[0];
+  prospects.unshift({
+    id: newId, nom: '', initiales: '+', av: '#E6F1FB:#185FA5',
+    telephone: '', entreprise: '', statut: 'appeler', source: 'Saisie Rapide',
+    valeur: 0, score: 0, resp: 'Grégory', date: today, dateRelance: today, note: '', appels: []
+  });
+  
+  // Force reset urgency filter if any column sort was previously active
+  sortCol = null;
+  sortDir = 'asc';
+  document.querySelectorAll('.sort-icon').forEach(el => { el.textContent = ''; el.parentElement.classList.remove('sort-active'); });
+  
+  renderAll();
+  
+  setTimeout(() => {
+    const row = document.querySelector(`tr[data-rid="${newId}"]`);
+    if (row) {
+      const input = row.querySelector('.js-foc-nom');
+      if (input) { input.focus(); }
+    }
+  }, 10);
 }
 
 function saveProspect() {
@@ -1072,6 +1514,7 @@ function saveProspect() {
   const { initiales, av } = avatarFromName(nom);
   const data = {
     nom, initiales, av,
+    telephone:  document.getElementById('mTelephone').value.trim(),
     entreprise: document.getElementById('mEntreprise').value.trim(),
     statut:     document.getElementById('mStatut').value,
     source:     document.getElementById('mSource').value,
@@ -1079,6 +1522,7 @@ function saveProspect() {
     score:      Math.min(100,Math.max(0,Number(document.getElementById('mScore').value)||0)),
     resp:       document.getElementById('mResp').value,
     date:       document.getElementById('mDate').value,
+    dateRelance: document.getElementById('mRelance').value || null,
     note:       document.getElementById('mNote').value.trim(),
   };
 
@@ -1114,6 +1558,197 @@ document.getElementById('confirmDelBtn').addEventListener('click', () => {
   }
   closeConfirm();
 });
+
+// ─── CALL HISTORY ───
+var callProspectId = null;
+function openCallModal(id) {
+  callProspectId = id;
+  const p = prospects.find(x=>x.id===id);
+  document.getElementById('callModalTitle').textContent = 'Journal d\'appels — ' + (p?.nom||'');
+  document.getElementById('callDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('callDuree').value = '';
+  document.getElementById('callResultat').value = 'repondu';
+  document.getElementById('callNote').value = '';
+  renderCallHistory();
+  document.getElementById('callModalBg').classList.add('open');
+}
+function closeCallModal() { document.getElementById('callModalBg').classList.remove('open'); callProspectId = null; }
+document.getElementById('callModalBg').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeCallModal(); });
+
+function addCall() {
+  const p = prospects.find(x=>x.id===callProspectId);
+  if (!p) return;
+  if (!p.appels) p.appels = [];
+  p.appels.unshift({
+    date: document.getElementById('callDate').value,
+    duree: Number(document.getElementById('callDuree').value)||0,
+    resultat: document.getElementById('callResultat').value,
+    note: document.getElementById('callNote').value.trim()
+  });
+  // Update last contact date
+  p.date = document.getElementById('callDate').value;
+  renderCallHistory();
+  renderAll();
+}
+
+function deleteCall(idx) {
+  const p = prospects.find(x=>x.id===callProspectId);
+  if (p && p.appels) { p.appels.splice(idx, 1); renderCallHistory(); renderAll(); }
+}
+
+const callResultLabels = { repondu:'Répondu', messagerie:'Messagerie', injoignable:'Injoignable', autre:'Autre' };
+function renderCallHistory() {
+  const p = prospects.find(x=>x.id===callProspectId);
+  const el = document.getElementById('callHistory');
+  if (!p || !p.appels || p.appels.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Aucun appel enregistré</div>';
+    return;
+  }
+  el.innerHTML = p.appels.map((a,i) => {
+    const dateStr = a.date ? new Date(a.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const resultCls = 'call-result call-result-'+(a.resultat||'autre');
+    return `<div class="call-entry">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">${dateStr}</span>
+          <span class="${resultCls}">${callResultLabels[a.resultat]||'Autre'}</span>
+          ${a.duree?'<span style="font-size:11px;color:var(--text3)">'+a.duree+' min</span>':''}
+        </div>
+        ${a.note?'<div style="font-size:12px;color:var(--text2)">'+a.note+'</div>':''}
+      </div>
+      <button class="act-btn" onclick="deleteCall(${i})" style="font-size:10px;padding:2px 6px">×</button>
+    </div>`;
+  }).join('');
+}
+
+// ─── EXPORT CSV ───
+function exportTodayCSV() {
+  const today = new Date().toISOString().split('T')[0];
+  let csv = "DateDernierContact,Prospect,Entreprise,Telephone,Statut,Note/Appel\n";
+  let count = 0;
+  // Bom for excel
+  const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  prospects.forEach(p => {
+    // Has a call today or was modified today
+    const todayCalls = (p.appels||[]).filter(a=>a.date===today);
+    if (p.date === today || todayCalls.length > 0) {
+      count++;
+      const lastAction = todayCalls.length > 0 ? `[Appel ${todayCalls[0].resultat}] ${todayCalls[0].note}` : (p.note||'');
+      csv += `"${p.date||''}","${p.nom.replace(/"/g,'""')}","${(p.entreprise||'').replace(/"/g,'""')}","${p.telephone||''}","${statusMap[p.statut]||p.statut}","${lastAction.replace(/"/g,'""')}"\n`;
+    }
+  });
+  if (count === 0) { alert("Aucune action ou appel enregistré aujourd'hui à exporter."); return; }
+  
+  const blob = new Blob([bom, csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `bilan_appels_${today}.csv`;
+  link.click();
+}
+
+// ─── MULTI-SELECT & BULK ACTIONS ───
+function toggleAllChecks(checked) {
+  document.querySelectorAll('.row-check').forEach(cb => cb.checked = checked);
+  updateBulkBar();
+}
+function getSelectedIds() {
+  return Array.from(document.querySelectorAll('.row-check:checked')).map(cb => cb.dataset.id);
+}
+function updateBulkBar() {
+  const ids = getSelectedIds();
+  const bar = document.getElementById('bulkBar');
+  if (ids.length === 0) { bar.innerHTML = ''; return; }
+  bar.innerHTML = `<div class="bulk-bar">
+    <span><b>${ids.length}</b> sélectionné${ids.length>1?'s':''}</span>
+    <select id="bulkStatus">${Object.keys(statusMap).map(k=>`<option value="${k}">${statusMap[k]}</option>`).join('')}</select>
+    <button onclick="bulkChangeStatus()">Changer statut</button>
+    <select id="bulkResp"><option value="Grégory">Grégory</option><option value="Édouard">Édouard</option><option value="Maxence">Maxence</option></select>
+    <button onclick="bulkAssign()">Assigner</button>
+    <button onclick="bulkDelete()" style="background:rgba(224,60,60,0.5)">Supprimer</button>
+    <button class="bulk-close" onclick="toggleAllChecks(false)">×</button>
+  </div>`;
+}
+function bulkChangeStatus() {
+  const ids = getSelectedIds();
+  const st = document.getElementById('bulkStatus').value;
+  ids.forEach(id => { const p = prospects.find(x=>x.id===id); if(p) p.statut = st; });
+  renderAll();
+}
+function bulkAssign() {
+  const ids = getSelectedIds();
+  const r = document.getElementById('bulkResp').value;
+  ids.forEach(id => { const p = prospects.find(x=>x.id===id); if(p) p.resp = r; });
+  renderAll();
+}
+function bulkDelete() {
+  const ids = getSelectedIds();
+  if (!confirm(`Supprimer ${ids.length} prospect(s) ?`)) return;
+  prospects = prospects.filter(p => !ids.includes(p.id));
+  renderAll();
+}
+
+// ─── DUPLICATE ───
+function duplicateProspect(id) {
+  const src = prospects.find(x => x.id === id);
+  if (!src) return;
+  const dup = JSON.parse(JSON.stringify(src));
+  dup.id = Date.now().toString() + Math.random().toString(36).slice(2,6);
+  dup.nom = src.nom + ' (copie)';
+  dup.statut = 'appeler';
+  dup.appels = [];
+  prospects.push(dup);
+  renderAll();
+}
+
+// ─── KANBAN ───
+var draggedProspectId = null;
+function renderKanban() {
+  const board = document.getElementById('kanbanBoard');
+  if (!board) return;
+  const cols = ['appeler','appele','repondu','rdv_planifie','rdv_effectue','signe','perdu'];
+  const colColors = {
+    appeler:'#4B8DF8', appele:'#7F77DD', repondu:'#EF9F27',
+    rdv_planifie:'#D4A017', rdv_effectue:'#1D9E75', signe:'#639922', perdu:'#E24B4A'
+  };
+  board.innerHTML = cols.map(st => {
+    const items = prospects.filter(p => p.statut === st);
+    return `<div class="kanban-col" data-status="${st}"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="dropKanban(event,'${st}');this.classList.remove('drag-over')">
+      <div class="kanban-col-header">
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${colColors[st]}"></span>
+          ${statusMap[st]}
+        </span>
+        <span class="kanban-col-count">${items.length}</span>
+      </div>
+      <div class="kanban-cards">
+        ${items.map(p => {
+          const [bg,fg] = p.av.split(':');
+          return `<div class="kanban-card" draggable="true"
+            ondragstart="draggedProspectId='${p.id}';this.classList.add('dragging')"
+            ondragend="this.classList.remove('dragging')"
+            ondblclick="editProspect('${p.id}')">
+            <div class="kanban-card-name"><span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${bg};color:${fg};text-align:center;line-height:20px;font-size:10px;margin-right:5px;vertical-align:middle">${p.initiales}</span>${p.nom}</div>
+            <div class="kanban-card-company">${p.entreprise}</div>
+            <div class="kanban-card-footer">
+              <span class="kanban-card-val">${Number(p.valeur).toLocaleString('fr-FR')} €</span>
+              <span>${p.resp}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function dropKanban(e, newStatus) {
+  e.preventDefault();
+  if (!draggedProspectId) return;
+  const p = prospects.find(x => x.id === draggedProspectId);
+  if (p) { p.statut = newStatus; renderAll(); }
+  draggedProspectId = null;
+}
 
 // ─── SIDEBAR ───
 function toggleSidebar() {
@@ -1356,19 +1991,93 @@ function parseCSV(text) {
 }
 
 function getDefaultProspects() {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0];
+  const twoDaysAgo = new Date(Date.now()-172800000).toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
+  const in3days = new Date(Date.now()+259200000).toISOString().split('T')[0];
+  const in5days = new Date(Date.now()+432000000).toISOString().split('T')[0];
   return [
-    { id:'1', nom:'Martin Dupont', initiales:'MD', av:'#B5D4F4:#0C447C', entreprise:'TechSoft SA', statut:'nego', source:'LinkedIn', valeur:12500, score:82, resp:'Grégory', date:'2026-03-27', note:'RDV prévu semaine prochaine' },
-    { id:'2', nom:'Claire Bernard', initiales:'CB', av:'#C0DD97:#27500A', entreprise:'Groupe Innov', statut:'prop', source:'Salon', valeur:8200, score:64, resp:'Édouard', date:'2026-03-26', note:'Devis envoyé, attente retour' },
-    { id:'3', nom:'Antoine Renard', initiales:'AR', av:'#CECBF6:#3C3489', entreprise:'FinanceMax', statut:'gagne', source:'Référence', valeur:22000, score:95, resp:'Grégory', date:'2026-03-24', note:'Contrat signé' },
-    { id:'4', nom:'Julie Morel', initiales:'JM', av:'#FAC775:#633806', entreprise:'StartupX', statut:'contact', source:'Site web', valeur:4500, score:41, resp:'Maxence', date:'2026-03-23', note:'Rappel lundi matin' },
-    { id:'5', nom:'Romain Petit', initiales:'RP', av:'#F7C1C1:#791F1F', entreprise:'ConsultPro', statut:'new', source:'Email', valeur:7800, score:29, resp:'Édouard', date:'2026-03-28', note:'Premier contact à faire' },
-    { id:'6', nom:'Nathalie Cos', initiales:'NC', av:'#B5D4F4:#0C447C', entreprise:'RetailGroup', statut:'perdu', source:'Appel sortant', valeur:15000, score:12, resp:'Maxence', date:'2026-03-15', note:'Pas de budget cette année' },
-    { id:'7', nom:'David Chen', initiales:'DC', av:'#C0DD97:#27500A', entreprise:'LogisticHub', statut:'prop', source:'LinkedIn', valeur:9300, score:71, resp:'Grégory', date:'2026-03-25', note:'Très intéressé' },
-    { id:'8', nom:'Emma Faure', initiales:'EF', av:'#CECBF6:#3C3489', entreprise:'AgriTech Bio', statut:'contact', source:'Salon', valeur:5600, score:53, resp:'Édouard', date:'2026-03-28', note:'A rappeler cet après-midi' },
+    { id:'1',  nom:'Romain Petit',     initiales:'RP', av:'#F7C1C1:#791F1F', telephone:'06 12 34 56 78', entreprise:'ConsultPro',      statut:'appeler', source:'Email',         valeur:7800,  score:29, resp:'Édouard',  date:'2026-03-28', dateRelance:yesterday, note:'Premier contact à faire', appels:[] },
+    { id:'2',  nom:'Isabelle Martin',  initiales:'IM', av:'#B5D4F4:#0C447C', telephone:'07 88 99 22 11', entreprise:'DataVision',       statut:'appeler', source:'LinkedIn',      valeur:6200,  score:35, resp:'Grégory',  date:'2026-03-27', dateRelance:today, note:'Profil intéressant', appels:[] },
+    { id:'3',  nom:'Karim Bensaid',    initiales:'KB', av:'#FAC775:#633806', telephone:'06 44 22 11 00', entreprise:'CloudNine SAS',    statut:'appeler', source:'Site web',      valeur:9100,  score:42, resp:'Maxence',  date:'2026-03-26', dateRelance:tomorrow, note:'Demande via formulaire', appels:[] },
+    { id:'4',  nom:'Lucie Fontaine',   initiales:'LF', av:'#C0DD97:#27500A', telephone:'01 45 67 89 00', entreprise:'GreenTech',        statut:'appeler', source:'Salon',         valeur:4800,  score:25, resp:'Édouard',  date:'2026-03-25', dateRelance:in3days, note:'Rencontrée au salon IoT', appels:[] },
+    { id:'5',  nom:'Marc Leroy',       initiales:'ML', av:'#CECBF6:#3C3489', telephone:'',               entreprise:'Leroy Conseil',    statut:'appeler', source:'Référence',    valeur:11000, score:38, resp:'Grégory',  date:'2026-03-24', dateRelance:twoDaysAgo, note:'Recommandé par Antoine', appels:[] },
+    { id:'6',  nom:'Julie Morel',      initiales:'JM', av:'#FAC775:#633806', entreprise:'StartupX',         statut:'appele',  source:'Site web',      valeur:4500,  score:41, resp:'Maxence',  date:'2026-03-23', dateRelance:in5days, note:'Rappel lundi', appels:[{date:'2026-03-23',duree:3,resultat:'messagerie',note:'Message laissé'}] },
+    { id:'7',  nom:'Emma Faure',       initiales:'EF', av:'#CECBF6:#3C3489', entreprise:'AgriTech Bio',     statut:'appele',  source:'Salon',         valeur:5600,  score:53, resp:'Édouard',  date:'2026-03-28', dateRelance:today, note:'A rappeler', appels:[{date:'2026-03-28',duree:2,resultat:'injoignable',note:'Ligne occupée'}] },
+    { id:'8',  nom:'Yann Mercier',     initiales:'YM', av:'#9FE1CB:#0F6E56', entreprise:'AutoPilot SAS',    statut:'appele',  source:'LinkedIn',      valeur:8700,  score:47, resp:'Grégory',  date:'2026-03-22', dateRelance:yesterday, note:'Attente retour', appels:[{date:'2026-03-22',duree:5,resultat:'repondu',note:'Intéressé'}] },
+    { id:'9',  nom:'Camille Duval',    initiales:'CD', av:'#B5D4F4:#0C447C', entreprise:'MédiPlus',         statut:'appele',  source:'Email',         valeur:6500,  score:55, resp:'Maxence',  date:'2026-03-21', dateRelance:null, note:'Message vocal laissé', appels:[{date:'2026-03-21',duree:1,resultat:'messagerie',note:'Boîte vocale'}] },
+    { id:'10', nom:'Claire Bernard',   initiales:'CB', av:'#C0DD97:#27500A', entreprise:'Groupe Innov',     statut:'repondu', source:'Salon',         valeur:8200,  score:64, resp:'Édouard',  date:'2026-03-26', dateRelance:tomorrow, note:'Devis envoyé', appels:[{date:'2026-03-26',duree:12,resultat:'repondu',note:'Bon échange, envoi devis'},{date:'2026-03-20',duree:4,resultat:'repondu',note:'Premier contact'}] },
+    { id:'11', nom:'David Chen',       initiales:'DC', av:'#C0DD97:#27500A', entreprise:'LogisticHub',      statut:'repondu', source:'LinkedIn',      valeur:9300,  score:71, resp:'Grégory',  date:'2026-03-25', dateRelance:in3days, note:'Proposition en cours', appels:[{date:'2026-03-25',duree:8,resultat:'repondu',note:'Budget OK'}] },
+    { id:'12', nom:'Sophie Girard',    initiales:'SG', av:'#F7C1C1:#791F1F', entreprise:'FinServ Group',    statut:'repondu', source:'Référence',    valeur:14500, score:68, resp:'Édouard',  date:'2026-03-20', dateRelance:twoDaysAgo, note:'Offre premium', appels:[{date:'2026-03-20',duree:15,resultat:'repondu',note:'Présentation complète'}] },
+    { id:'13', nom:'Thomas Blanc',     initiales:'TB', av:'#FAC775:#633806', entreprise:'MediaLab Digital',  statut:'repondu', source:'Appel sortant', valeur:7200,  score:59, resp:'Maxence',  date:'2026-03-19', dateRelance:in5days, note:'Envoi de doc', appels:[{date:'2026-03-19',duree:6,resultat:'repondu',note:'Positif'}] },
+    { id:'14', nom:'Martin Dupont',    initiales:'MD', av:'#B5D4F4:#0C447C', entreprise:'TechSoft SA',      statut:'rdv_planifie', source:'LinkedIn', valeur:12500, score:82, resp:'Grégory',  date:'2026-03-27', dateRelance:in3days, note:'RDV semaine prochaine', appels:[{date:'2026-03-27',duree:10,resultat:'repondu',note:'RDV fixé'},{date:'2026-03-22',duree:7,resultat:'repondu',note:'Très intéressé'}] },
+    { id:'15', nom:'Aurélie Roux',     initiales:'AR', av:'#CECBF6:#3C3489', entreprise:'Nexus Digital',    statut:'rdv_planifie', source:'Site web',  valeur:18000, score:76, resp:'Édouard',  date:'2026-03-18', dateRelance:tomorrow, note:'RDV visio mardi 14h', appels:[{date:'2026-03-18',duree:9,resultat:'repondu',note:'Visio programmée'}] },
+    { id:'16', nom:'Nicolas Lambert',  initiales:'NL', av:'#9FE1CB:#0F6E56', entreprise:'IndusTech',        statut:'rdv_effectue', source:'Salon',     valeur:21000, score:88, resp:'Grégory',  date:'2026-03-17', dateRelance:today, note:'Proposition finale envoyée', appels:[{date:'2026-03-17',duree:45,resultat:'repondu',note:'RDV excellent'},{date:'2026-03-10',duree:15,resultat:'repondu',note:'Découverte besoins'}] },
+    { id:'17', nom:'Hélène Picard',    initiales:'HP', av:'#F7C1C1:#791F1F', entreprise:'BioLab Sciences',  statut:'rdv_effectue', source:'Référence', valeur:16500, score:85, resp:'Maxence',  date:'2026-03-16', dateRelance:null, note:'Budget validé', appels:[{date:'2026-03-16',duree:30,resultat:'repondu',note:'RDV physique réussi'}] },
+    { id:'18', nom:'Antoine Renard',   initiales:'AR', av:'#CECBF6:#3C3489', entreprise:'FinanceMax',       statut:'signe', source:'Référence',    valeur:22000, score:95, resp:'Grégory',  date:'2026-03-24', dateRelance:null, note:'Contrat signé', appels:[{date:'2026-03-24',duree:5,resultat:'repondu',note:'Signature'}] },
+    { id:'19', nom:'Laura Vasseur',    initiales:'LV', av:'#C0DD97:#27500A', entreprise:'EduSmart',         statut:'signe', source:'LinkedIn',      valeur:13500, score:92, resp:'Édouard',  date:'2026-03-14', dateRelance:null, note:'Déploiement avril', appels:[{date:'2026-03-14',duree:8,resultat:'repondu',note:'Contrat validé'}] },
+    { id:'20', nom:'Philippe Moreau',  initiales:'PM', av:'#B5D4F4:#0C447C', entreprise:'ArchiDesign',      statut:'signe', source:'Appel sortant', valeur:28000, score:97, resp:'Maxence',  date:'2026-03-12', dateRelance:null, note:'Client premium', appels:[{date:'2026-03-12',duree:20,resultat:'repondu',note:'Signature contrat premium'}] },
+    { id:'21', nom:'Nathalie Cos',     initiales:'NC', av:'#B5D4F4:#0C447C', entreprise:'RetailGroup',      statut:'perdu', source:'Appel sortant', valeur:15000, score:12, resp:'Maxence',  date:'2026-03-15', dateRelance:null, note:'Pas de budget', appels:[{date:'2026-03-15',duree:4,resultat:'repondu',note:'Pas de budget en 2026'}] },
+    { id:'22', nom:'François Dupuis',  initiales:'FD', av:'#FAC775:#633806', entreprise:'OldSchool Corp',   statut:'perdu', source:'Email',         valeur:5500,  score:18, resp:'Édouard',  date:'2026-03-10', dateRelance:null, note:'Projet reporté', appels:[{date:'2026-03-10',duree:6,resultat:'injoignable',note:'Jamais rappelé'}] },
   ];
 }
 
-// loadProspects() est appelé par onAuthStateChanged après connexion
+function startTour() {
+  const driverObj = window.driver.js.driver({
+    showProgress: true,
+    animate: true,
+    padding: 10,
+    allowClose: false,
+    doneBtnText: "C'est parti !",
+    nextBtnText: "Suivant →",
+    prevBtnText: "← Précédent",
+    steps: [
+      {
+        popover: {
+          title: "Bienvenue sur Synaptics CRM ✨",
+          description: "Découvrez votre nouvel espace de prospection haute performance. Laissez-nous vous guider en 3 étapes clés.",
+        }
+      },
+      {
+        element: "#pipeline",
+        popover: {
+          title: "1. Le Pipeline de Conquête",
+          description: "Visualisez en un clin d'œil vos taux de conversion globaux. Cliquez sur une étape pour filtrer votre liste instantanément.",
+        }
+      },
+      {
+        element: "button[onclick='addFastRow()']",
+        popover: {
+          title: "2. Productivité Absolue",
+          description: "Besoin d'ajouter un prospect durant un appel ? Un clic sur \\\"Ligne Rapide\\\" insère une ligne instantanément dans le tableau.<br><br>Vous pouvez également isoler vos relances avec \\\"Ma liste du jour\\\".",
+        }
+      },
+      {
+        element: ".table-card",
+        popover: {
+          title: "3. Naviguez. Tapez. Validez.",
+          description: "Tout le tableau est interactif. Cliquez dans une case, modifiez, et faites <b>Entrée</b> pour passer au client d'en dessous ! Vous y êtes, bonne chasse !",
+        }
+      }
+    ],
+    onDestroyStarted: () => {
+      localStorage.setItem('synaptic_tour_completed', 'true');
+      driverObj.destroy();
+    }
+  });
+  driverObj.drive();
+}
+// ── THEME TOGGLE ──
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('synaptic_theme', isDark ? 'dark' : 'light');
+}
+// Force default to dark
+(function initTheme() {
+  localStorage.setItem('synaptic_theme', 'dark');
+  document.documentElement.classList.add('dark');
+})();
 </script>
 </body>
 </html>
