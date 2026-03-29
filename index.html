@@ -554,20 +554,20 @@
         <span>Menu</span>
       </button>
       <div class="sidebar-nav">
-        <button class="sidebar-item active" onclick="switchPage('dashboard', this)">
+        <button id="nav-dashboard" class="sidebar-item active" onclick="switchPage('dashboard', this)">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/></svg>
           <span class="item-label">Dashboard</span>
         </button>
-        <button class="sidebar-item" onclick="switchPage('kanban', this)">
+        <button id="nav-kanban" class="sidebar-item" onclick="switchPage('kanban', this)">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>
           <span class="item-label">Kanban</span>
         </button>
-        <button class="sidebar-item" onclick="switchPage('import-export', this)">
+        <button id="nav-import" class="sidebar-item" onclick="switchPage('import-export', this)">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span class="item-label">Import / Export</span>
           <span class="di-badge">Bêta</span>
         </button>
-        <button class="sidebar-item" onclick="switchPage('parametres', this)">
+        <button id="nav-settings" class="sidebar-item" onclick="switchPage('parametres', this)">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           <span class="item-label">Paramètres</span>
         </button>
@@ -2035,7 +2035,7 @@ function startTour() {
     steps: [
       {
         popover: {
-          title: "Bienvenue sur Synaptics CRM ✨",
+          title: "Bienvenur sur le CRM call de synaptics ✨",
           description: "Découvrez votre nouvel espace de prospection haute performance. Laissez-nous vous guider en 3 étapes clés.",
         }
       },
@@ -2059,9 +2059,34 @@ function startTour() {
           title: "3. Naviguez. Tapez. Validez.",
           description: "Tout le tableau est interactif. Cliquez dans une case, modifiez, et faites <b>Entrée</b> pour passer au client d'en dessous ! Vous y êtes, bonne chasse !",
         }
+      },
+      {
+        element: "#nav-kanban",
+        popover: {
+          title: "4. Vue Kanban",
+          description: "Gérez vos opportunités de manière visuelle ! Déplacez vos prospects entre les colonnes pour suivre leur progression.",
+        },
+        onHighlightStarted: () => switchPage('kanban', document.getElementById('nav-kanban'))
+      },
+      {
+        element: "#nav-import",
+        popover: {
+          title: "5. Import / Export",
+          description: "Importez vos listes de prospects (CSV) ou exportez vos données en un clic pour vos rapports extérieurs.",
+        },
+        onHighlightStarted: () => switchPage('import-export', document.getElementById('nav-import'))
+      },
+      {
+        element: "#nav-settings",
+        popover: {
+          title: "6. Personnalisation",
+          description: "Gérez les membres de votre équipe et configurez vos préférences dans cet onglet.",
+        },
+        onHighlightStarted: () => switchPage('parametres', document.getElementById('nav-settings'))
       }
     ],
     onDestroyStarted: () => {
+      switchPage('dashboard', document.getElementById('nav-dashboard'));
       localStorage.setItem('synaptic_tour_completed', 'true');
       driverObj.destroy();
     }
