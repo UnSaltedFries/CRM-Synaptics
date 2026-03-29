@@ -2866,8 +2866,8 @@
       const label = document.getElementById('statusTriggerLabel');
       const master = document.getElementById('checkAllStatus');
       
-      const realStatusesCount = document.querySelectorAll('.status-cb[value!="exemple"]').length;
-      const selectedRealCount = Array.from(document.querySelectorAll('.status-cb[value!="exemple"]:checked')).length;
+      const realStatusesCount = document.querySelectorAll('.status-cb:not([value="exemple"])').length;
+      const selectedRealCount = Array.from(document.querySelectorAll('.status-cb:not([value="exemple"]):checked')).length;
 
       if (selectedRealCount === realStatusesCount && !document.querySelector('.status-cb[value="exemple"]:checked')) {
         label.innerHTML = 'Tous les statuts';
