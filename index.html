@@ -316,22 +316,6 @@
       z-index: 400;
     }
 
-    /* Vertical separator for continuity */
-    .topnav::after {
-      content: '';
-      position: absolute;
-      left: 56px;
-      top: 0;
-      bottom: 0;
-      width: 0.5px;
-      background: var(--border2);
-      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    html.sidebar-open .topnav::after {
-      left: 240px;
-    }
-
     .nav-left {
       display: flex;
       align-items: center;
@@ -352,12 +336,6 @@
 
     .nav-logo:hover {
       color: var(--blue);
-    }
-
-    .nav-divider {
-      width: 1px;
-      height: 20px;
-      background: var(--border2);
     }
 
     .nav-badge {
@@ -2037,7 +2015,6 @@
         <div class="nav-logo" onclick="switchPage('dashboard', document.getElementById('nav-dashboard'))" title="Retour à l'accueil">
           Synaptics Call CRM
         </div>
-        <div class="nav-divider"></div>
         <div class="nav-badge" id="pageBadge">Dashboard</div>
       </div>
       <div class="nav-right">
@@ -2649,6 +2626,17 @@
     var currentData = [];
     let selStage = null;
 
+    const EXAMPLE_PROSPECTS = [
+      { id: 'ex1', nom: 'Jean Dupont', entreprise: 'Tech Corp', tel: '06 12 34 56 78', statut: 'appeler', valeur: 1500, score: 3, resp: 'Lilian', dateRelance: '2026-04-10', created: '2026-03-01', isExample: true },
+      { id: 'ex2', nom: 'Alice Martin', entreprise: 'Soft Solution', tel: '07 88 99 00 11', statut: 'appele', valeur: 3000, score: 4, resp: 'Lilian', dateRelance: '2026-03-25', created: '2026-03-05', isExample: true },
+      { id: 'ex3', nom: 'Marc Durand', entreprise: 'Global Log', tel: '06 55 44 33 22', statut: 'repondu', valeur: 5000, score: 5, resp: 'Lilian', dateRelance: '2026-03-28', created: '2026-03-10', isExample: true },
+      { id: 'ex4', nom: 'Sophie Petit', entreprise: 'Innov Art', tel: '06 11 22 33 44', statut: 'rdv_planifie', valeur: 2500, score: 2, resp: 'Admin', dateRelance: '2026-04-02', created: '2026-03-12', isExample: true },
+      { id: 'ex5', nom: 'Thomas Roux', entreprise: 'Build It', tel: '07 44 55 66 77', statut: 'rdv_effectue', valeur: 8000, score: 4, resp: 'Admin', dateRelance: '2026-03-20', created: '2026-03-15', isExample: true },
+      { id: 'ex6', nom: 'Julie Morel', entreprise: 'Fresh Food', tel: '06 99 88 77 66', statut: 'signe', valeur: 12000, score: 5, resp: 'Lilian', dateRelance: '', created: '2026-02-20', isExample: true },
+      { id: 'ex7', nom: 'Kevin Garcia', entreprise: 'Fast Delivery', tel: '06 00 11 22 33', statut: 'perdu', valeur: 0, score: 1, resp: 'Lilian', dateRelance: '', created: '2026-03-18', isExample: true },
+      { id: 'ex8', nom: 'Emma Leroy', entreprise: 'Zen Garden', tel: '07 12 34 56 78', statut: 'appeler', valeur: 900, score: 3, resp: 'Admin', dateRelance: '2026-04-15', created: '2026-03-20', isExample: true }
+    ];
+
     function computePipelineData() {
       // Cumulative: a prospect at stage N counts in stages 0..N
       // Order: appeler(0) → appele(1) → repondu(2) → rdv_effectue(3) → signe(4)
@@ -2661,7 +2649,6 @@
         if (idx === undefined) return; // perdu → not in funnel
         for (let i = 0; i <= idx; i++) currentData[i]++;
       });
-      if (currentData.every(v => v === 0)) currentData = [1, 0, 0, 0, 0];
     }
 
     // ─── RENDER ALL ───
@@ -2863,7 +2850,8 @@
       const rs = document.getElementById('filterResp').value;
       const today = new Date().toISOString().split('T')[0];
 
-      let rows = prospects.filter(p => {
+      // Merge real prospects with examples for display
+      let rows = [...prospects, ...EXAMPLE_PROSPECTS].filter(p => {
         if (st && p.statut !== st) return false;
         if (rs && p.resp !== rs) return false;
         if (showOnlyToday) {
