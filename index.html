@@ -141,6 +141,22 @@
       font-size: 14px;
     }
 
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text3);
+    }
+
     /* ── LOGIN PAGE ── */
     #loginPage {
       display: flex;
@@ -231,6 +247,7 @@
 
     .field input:focus {
       border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
     }
 
     .btn-login {
@@ -244,11 +261,12 @@
       border: none;
       cursor: pointer;
       margin-top: 6px;
-      transition: opacity 0.15s;
+      transition: opacity 0.15s, transform 0.15s;
     }
 
     .btn-login:hover {
       opacity: 0.88;
+      transform: translateY(-1px);
     }
 
     .login-error {
@@ -310,6 +328,12 @@
       gap: 8px;
       font-weight: 600;
       font-size: 15px;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+
+    .nav-logo:hover {
+      color: var(--blue);
     }
 
     .nav-divider {
@@ -1565,6 +1589,7 @@
     .mfield select:focus,
     .mfield textarea:focus {
       border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
     }
 
     .mfield textarea {
@@ -1757,6 +1782,12 @@
       stroke-linecap: round;
       stroke-linejoin: round;
       flex-shrink: 0;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .sidebar-item:hover svg,
+    .sidebar-toggle:hover svg {
+      transform: scale(1.12);
     }
 
     .sidebar-item .item-label {
@@ -1985,7 +2016,7 @@
 
     <nav class="topnav">
       <div class="nav-left">
-        <div class="nav-logo">
+        <div class="nav-logo" onclick="switchPage('dashboard', document.getElementById('nav-dashboard'))" title="Retour à l'accueil">
           Synaptics Call CRM
         </div>
         <div class="nav-divider"></div>
