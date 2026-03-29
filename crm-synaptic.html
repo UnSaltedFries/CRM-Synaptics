@@ -857,7 +857,8 @@ function computePipelineData() {
   // Cumulative: a prospect at stage N counts in stages 0..N
   // Order: appeler(0) → appele(1) → repondu(2) → rdv_effectue(3) → signe(4)
   // rdv_planifie counts same as rdv_effectue (sub-stage), perdu excluded
-  const stageIndex = { appeler:0, appele:1, repondu:2, rdv_planifie:3, rdv_effectue:3, signe:4 };
+  // New + legacy status mapping
+  const stageIndex = { appeler:0, new:0, appele:1, contact:1, repondu:2, prop:2, rdv_planifie:3, rdv_effectue:3, nego:3, signe:4, gagne:4 };
   currentData = new Array(pipeKeys.length).fill(0);
   prospects.forEach(p => {
     const idx = stageIndex[p.statut];
