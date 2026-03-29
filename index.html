@@ -976,6 +976,7 @@
       padding: 0;
       overflow: visible; /* Important for multi-select dropdown */
       margin-bottom: 20px;
+      min-height: 500px; /* More space even if empty */
     }
 
     .table-top {
@@ -3056,7 +3057,16 @@
 
       // Merge real prospects with examples for display
       let rows = [...prospects, ...EXAMPLE_PROSPECTS].filter(p => {
-        if (st.length > 0 && !st.includes(p.statut)) return false;
+        // Strict opt-in for 'exemple': Only show if explicitly checked in the filter
+        if (p.statut === 'exemple') {
+          return st.includes('exemple');
+        }
+
+        // For real prospects:
+        const stReal = st.filter(x => x !== 'exemple');
+        // If some REAL filters are checked, return only those.
+        // If NO status (or only 'exemple') is checked, show all real prospects.
+        if (stReal.length > 0 && !stReal.includes(p.statut)) return false;
         if (rs && p.resp !== rs) return false;
         if (showOnlyToday) {
           if (p.statut === 'signe' || p.statut === 'perdu') return false;
