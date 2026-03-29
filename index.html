@@ -304,7 +304,7 @@
     .topnav {
       background: var(--surface);
       border-bottom: 0.5px solid var(--border2);
-      padding: 0 24px;
+      padding: 0;
       height: 52px;
       display: flex;
       align-items: center;
@@ -360,13 +360,14 @@
       padding: 3px 10px;
       border-radius: 20px;
       border: 0.5px solid var(--border);
-      margin-left: 12px;
+      margin-left: 16px;
     }
 
     .nav-right {
       display: flex;
       align-items: center;
       gap: 10px;
+      padding-right: 24px;
     }
 
     .nav-user {
@@ -2709,7 +2710,7 @@
       svg.innerHTML = '';
       const W = 800, H = 220, mid = H / 2, max = currentData[0] || 1;
       // Visual heights with minimum funnel taper (each stage ≤ 85% of previous visually)
-      const MIN_H = 16; // minimum thickness for hoverability
+      const MIN_H = 10; // minimum thickness for hoverability
       const rawH = currentData.map(v => Math.max(MIN_H, (v / max) * (H * 0.78)));
       const visH = [rawH[0]];
       for (let j = 1; j < rawH.length; j++) { visH[j] = Math.max(MIN_H, Math.min(rawH[j], visH[j - 1] * 0.85)); }
