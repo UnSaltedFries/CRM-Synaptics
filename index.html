@@ -2172,6 +2172,22 @@
             </svg>
             <span class="item-label">Kanban</span>
           </button>
+          <button id="nav-prospects" class="sidebar-item" onclick="switchPage('prospects', this)">
+            <svg viewBox="0 0 24 24">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+              <path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            <span class="item-label">Résumé des Prospects</span>
+          </button>
+          <button id="nav-exemples" class="sidebar-item" onclick="switchPage('exemples', this)">
+            <svg viewBox="0 0 24 24">
+              <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+            </svg>
+            <span class="item-label">Exemples</span>
+          </button>
           <button id="nav-import" class="sidebar-item" onclick="switchPage('import-export', this)">
             <svg viewBox="0 0 24 24">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -2362,6 +2378,175 @@
               <div class="kanban-board" id="kanbanBoard"></div>
             </div>
           </div><!-- /page-kanban -->
+
+          <!-- ══ PAGE: RÉSUMÉ DES PROSPECTS ══ -->
+          <div class="page" id="page-prospects">
+            <div class="table-card">
+              <div class="table-top">
+                <div class="ct" style="display:flex;align-items:center;gap:10px">
+                  <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 010 7.75"/>
+                  </svg>
+                  Prospects
+                </div>
+                <div class="table-controls">
+                  <div id="proPersonBtns" style="display:flex;gap:4px;margin-right:8px;flex-wrap:wrap"></div>
+                  <input class="tbl-search" type="text" placeholder="Rechercher..." id="proSearchQ"
+                    oninput="renderProspectsTable()" />
+                  <select class="tbl-filter" id="proFilterDate" onchange="renderProspectsTable()">
+                    <option value="">Toutes les dates</option>
+                    <option value="today">Aujourd'hui</option>
+                    <option value="week">Cette semaine</option>
+                    <option value="month">Ce mois</option>
+                    <option value="dormant">Inactifs >7j</option>
+                  </select>
+
+                  <div class="status-dropdown" id="proStatusDropdownContainer">
+                    <div class="status-trigger" onclick="toggleProStatusDropdown(event)">
+                      <span id="proStatusTriggerLabel">Tous les statuts</span>
+                    </div>
+                    <div class="status-options" id="proStatusOptions">
+                      <div class="status-option" onclick="toggleProAllStatuses(event)">
+                        <input type="checkbox" id="proCheckAllStatus" checked>
+                        <span style="font-weight:600">Tous les statuts</span>
+                      </div>
+                      <div class="status-divider"></div>
+                      <div class="status-option" onclick="toggleProOneStatus(event, 'appeler')">
+                        <input type="checkbox" class="pro-status-cb" value="appeler" checked>
+                        <span>À appeler</span>
+                      </div>
+                      <div class="status-option" onclick="toggleProOneStatus(event, 'appele')">
+                        <input type="checkbox" class="pro-status-cb" value="appele" checked>
+                        <span>Appelé</span>
+                      </div>
+                      <div class="status-option" onclick="toggleProOneStatus(event, 'repondu')">
+                        <input type="checkbox" class="pro-status-cb" value="repondu" checked>
+                        <span>Répondu</span>
+                      </div>
+                      <div class="status-option" onclick="toggleProOneStatus(event, 'rdv_planifie')">
+                        <input type="checkbox" class="pro-status-cb" value="rdv_planifie" checked>
+                        <span>RDV planifié</span>
+                      </div>
+                      <div class="status-option" onclick="toggleProOneStatus(event, 'rdv_effectue')">
+                        <input type="checkbox" class="pro-status-cb" value="rdv_effectue" checked>
+                        <span>RDV effectué</span>
+                      </div>
+                      <div class="status-option" onclick="toggleProOneStatus(event, 'signe')">
+                        <input type="checkbox" class="pro-status-cb" value="signe" checked>
+                        <span>Signé</span>
+                      </div>
+                      <div class="status-option" onclick="toggleProOneStatus(event, 'perdu')">
+                        <input type="checkbox" class="pro-status-cb" value="perdu" checked>
+                        <span>Perdu</span>
+                      </div>
+                      <div class="status-option" onclick="toggleProOneStatus(event, 'npai')">
+                        <input type="checkbox" class="pro-status-cb" value="npai" checked>
+                        <span>Faux N°/NPAI</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button class="btn-today" id="proBtnPriority" onclick="togglePriorityFilter()"
+                    title="Afficher uniquement les prospects prioritaires (score élevé, RDV proche, relance urgente)">Prioritaires</button>
+                  <button class="btn-today" id="proBtnTodayPro" onclick="toggleProTodayFilter()">Ma liste du jour</button>
+                  <button class="btn-today"
+                    style="background:var(--blue-l);color:var(--blue-d);border-color:var(--blue)" onclick="addFastRow()"
+                    title="Ajouter une ligne vierge en haut du tableau en 1 clic">Ligne Rapide</button>
+                  <button class="btn-add" onclick="openModal()">+ Ajouter</button>
+                </div>
+              </div>
+              <div id="proBulkBar"></div>
+              <div style="overflow-x:auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:30px"><input type="checkbox" class="tbl-check" id="proCheckAll"
+                          onchange="toggleAllProChecks(this.checked)" /></th>
+                      <th class="sortable" onclick="sortProTable('nom')">Prospect <span class="sort-icon"
+                          id="pro-sort-nom"></span></th>
+                      <th class="sortable" onclick="sortProTable('telephone')">Téléphone <span class="sort-icon"
+                          id="pro-sort-telephone"></span></th>
+                      <th class="sortable" onclick="sortProTable('entreprise')">Entreprise <span class="sort-icon"
+                          id="pro-sort-entreprise"></span></th>
+                      <th>Statut</th>
+                      <th class="sortable" onclick="sortProTable('valeur')">Valeur (€) <span class="sort-icon"
+                          id="pro-sort-valeur"></span></th>
+                      <th class="sortable" onclick="sortProTable('score')">Score <span class="sort-icon"
+                          id="pro-sort-score"></span></th>
+                      <th class="sortable" onclick="sortProTable('resp')">Responsable <span class="sort-icon"
+                          id="pro-sort-resp"></span></th>
+                      <th class="sortable" onclick="sortProTable('date')">Dernier contact <span class="sort-icon"
+                          id="pro-sort-date"></span></th>
+                      <th class="sortable" onclick="sortProTable('dateRelance')">Relance <span class="sort-icon"
+                          id="pro-sort-dateRelance"></span></th>
+                      <th>Note</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="proTableBody"></tbody>
+                </table>
+              </div>
+              <div class="tbl-footer">
+                <span class="tbl-count" id="proTblCount"></span>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:12px;color:var(--text3)">Afficher :</span>
+                  <select class="tbl-filter" id="proRowLimit" onchange="renderProspectsTable()" style="min-width:70px">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="0">Tout</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div><!-- /page-prospects -->
+
+          <!-- ══ PAGE: EXEMPLES ══ -->
+          <div class="page" id="page-exemples">
+            <div class="pipeline-card" style="margin-bottom:20px">
+              <div class="card-header">
+                <div class="card-title" style="display:flex;align-items:center;gap:10px">
+                  <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8">
+                    <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+                    <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+                  </svg>
+                  Fiches Exemples
+                </div>
+              </div>
+              <p style="color:var(--text2);font-size:13px;margin-bottom:16px">
+                Ces fiches servent de modèles et de démonstration. Elles ne sont pas comptabilisées dans vos KPIs ni votre pipeline.
+              </p>
+              <div id="exempleSummary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px"></div>
+            </div>
+            <div class="table-card">
+              <div class="table-top">
+                <div class="ct">Tableau récapitulatif</div>
+              </div>
+              <div style="overflow-x:auto">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Prospect</th>
+                      <th>Téléphone</th>
+                      <th>Entreprise</th>
+                      <th>Valeur (€)</th>
+                      <th>Score</th>
+                      <th>Responsable</th>
+                      <th>Relance</th>
+                      <th>Date de création</th>
+                    </tr>
+                  </thead>
+                  <tbody id="exempleTableBody"></tbody>
+                </table>
+              </div>
+              <div class="tbl-footer">
+                <span class="tbl-count" id="exempleTblCount"></span>
+              </div>
+            </div>
+          </div><!-- /page-exemples -->
 
           <!-- ══ PAGE: IMPORT / EXPORT ══ -->
           <div class="page" id="page-import-export">
@@ -3554,7 +3739,7 @@
       document.documentElement.classList.remove('sidebar-open');
     }
 
-    const pageNames = { dashboard: 'Dashboard', 'import-export': 'Import / Export', parametres: 'Paramètres' };
+    const pageNames = { dashboard: 'Dashboard', prospects: 'Résumé des Prospects', exemples: 'Exemples', 'import-export': 'Import / Export', parametres: 'Paramètres' };
     function switchPage(id, btn) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById('page-' + id).classList.add('active');
@@ -3563,6 +3748,8 @@
       document.getElementById('pageBadge').textContent = pageNames[id] || id;
       closeSidebar();
       if (id === 'parametres') renderSettingsTeam();
+      if (id === 'prospects') renderProspectsTable();
+      if (id === 'exemples') renderExemplesTable();
     }
 
     var teamMembers = [
@@ -3921,6 +4108,278 @@
       });
       driverObj.drive();
     }
+    // ─── PROSPECTS PAGE (Résumé des Prospects) ───
+    var proSortCol = null, proSortDir = 'asc';
+    var proShowOnlyToday = false;
+    var proShowPriority = false;
+    var proFilterResp = '';
+
+    function getProSelectedStatuses() {
+      return Array.from(document.querySelectorAll('.pro-status-cb:checked')).map(cb => cb.value);
+    }
+
+    function toggleProStatusDropdown(e) {
+      e.stopPropagation();
+      document.getElementById('proStatusOptions').classList.toggle('show');
+    }
+    window.addEventListener('click', () => { const el = document.getElementById('proStatusOptions'); if (el) el.classList.remove('show'); });
+
+    function toggleProOneStatus(e, val) {
+      e.stopPropagation();
+      const cb = e.currentTarget.querySelector('input');
+      if (e.target.tagName !== 'INPUT') cb.checked = !cb.checked;
+      updateProStatusLabel();
+      renderProspectsTable();
+    }
+
+    function toggleProAllStatuses(e) {
+      e.stopPropagation();
+      const master = document.getElementById('proCheckAllStatus');
+      if (e.target.tagName !== 'INPUT') master.checked = !master.checked;
+      document.querySelectorAll('.pro-status-cb').forEach(cb => cb.checked = master.checked);
+      updateProStatusLabel();
+      renderProspectsTable();
+    }
+
+    function updateProStatusLabel() {
+      const all = document.querySelectorAll('.pro-status-cb');
+      const checked = document.querySelectorAll('.pro-status-cb:checked');
+      const label = document.getElementById('proStatusTriggerLabel');
+      const master = document.getElementById('proCheckAllStatus');
+      if (checked.length === 0 || checked.length === all.length) {
+        label.textContent = 'Tous les statuts';
+        master.checked = checked.length === all.length;
+      } else if (checked.length === 1) {
+        label.textContent = statusMap[checked[0].value] || checked[0].value;
+        master.checked = false;
+      } else {
+        label.textContent = checked.length + ' statuts';
+        master.checked = false;
+      }
+    }
+
+    function togglePriorityFilter() {
+      proShowPriority = !proShowPriority;
+      const btn = document.getElementById('proBtnPriority');
+      if (proShowPriority) btn.classList.add('active'); else btn.classList.remove('active');
+      renderProspectsTable();
+    }
+
+    function toggleProTodayFilter() {
+      proShowOnlyToday = !proShowOnlyToday;
+      const btn = document.getElementById('proBtnTodayPro');
+      if (proShowOnlyToday) btn.classList.add('active'); else btn.classList.remove('active');
+      renderProspectsTable();
+    }
+
+    function sortProTable(col) {
+      if (proSortCol === col) proSortDir = proSortDir === 'asc' ? 'desc' : 'asc';
+      else { proSortCol = col; proSortDir = 'asc'; }
+      document.querySelectorAll('#page-prospects .sort-icon').forEach(el => { el.textContent = ''; el.parentElement.classList.remove('sort-active'); });
+      const icon = document.getElementById('pro-sort-' + col);
+      if (icon) { icon.textContent = proSortDir === 'asc' ? '▲' : '▼'; icon.parentElement.classList.add('sort-active'); }
+      renderProspectsTable();
+    }
+
+    function renderProPersonBtns() {
+      const el = document.getElementById('proPersonBtns');
+      if (!el) return;
+      const names = ['Tous', ...teamMembers.map(m => m.name)];
+      el.innerHTML = names.map(n => {
+        const isActive = (n === 'Tous' && !proFilterResp) || proFilterResp === n;
+        const style = isActive ? 'background:var(--blue);color:#fff;border-color:var(--blue)' : '';
+        return `<button class="btn-today" style="font-size:11px;padding:4px 10px;${style}" onclick="setProResp('${n === 'Tous' ? '' : n}')">${n}</button>`;
+      }).join('');
+    }
+
+    function setProResp(name) {
+      proFilterResp = name;
+      renderProPersonBtns();
+      renderProspectsTable();
+    }
+
+    function toggleAllProChecks(checked) {
+      document.querySelectorAll('#proTableBody .row-check').forEach(cb => cb.checked = checked);
+      updateProBulkBar();
+    }
+
+    function updateProBulkBar() {
+      const checked = document.querySelectorAll('#proTableBody .row-check:checked');
+      const bar = document.getElementById('proBulkBar');
+      if (!bar) return;
+      if (checked.length === 0) { bar.innerHTML = ''; return; }
+      const ids = Array.from(checked).map(cb => cb.dataset.id);
+      bar.innerHTML = `<div class="bulk-bar"><span>${ids.length} sélectionné${ids.length > 1 ? 's' : ''}</span>
+        <button class="bulk-btn" onclick="bulkDeleteFromPro(this)" data-ids='${JSON.stringify(ids)}'>Supprimer</button></div>`;
+    }
+
+    function bulkDeleteFromPro(btn) {
+      const ids = JSON.parse(btn.dataset.ids);
+      if (!confirm('Supprimer ' + ids.length + ' prospect(s) ?')) return;
+      prospects = prospects.filter(p => !ids.includes(p.id));
+      renderAll();
+      renderProspectsTable();
+    }
+
+    function buildRowHtml(p, today) {
+      const [bg, fg] = (p.av || '#E6F1FB:#185FA5').split(':');
+      const sc = p.score > 70 ? '#639922' : p.score > 40 ? '#BA7517' : '#E24B4A';
+      let relanceHtml = `<div class="relance-cell"><span class="relance-dot relance-none"></span><input type="date" class="inline-date" value="${p.dateRelance || ''}" onchange="updateInline('${p.id}', 'dateRelance', this.value)"/></div>`;
+      if (p.dateRelance) {
+        const cls = p.dateRelance < today ? 'relance-late' : p.dateRelance === today ? 'relance-today' : 'relance-future';
+        relanceHtml = `<div class="relance-cell"><span class="relance-dot ${cls}"></span><input type="date" class="inline-date" value="${p.dateRelance}" onchange="updateInline('${p.id}', 'dateRelance', this.value)"/></div>`;
+      }
+      const callCount = (p.appels || []).length;
+      const isLate = p.dateRelance && p.dateRelance < today && p.statut !== 'signe' && p.statut !== 'perdu' && p.statut !== 'npai';
+      const isDone = p.statut === 'signe' || p.statut === 'perdu';
+      const isNpai = p.statut === 'npai';
+      let rowClass = isNpai ? 'row-npai' : (isLate ? 'row-late' : (isDone ? 'row-done' : ''));
+
+      return `<tr class="${rowClass}" data-rid="${p.id}">
+      <td><input type="checkbox" class="tbl-check row-check" data-id="${p.id}" onchange="updateProBulkBar()"/></td>
+      <td><div class="prospect-name"><div class="av-sm" style="background:${bg};color:${fg}">${p.initiales || '+'}</div><input class="inline-edit" style="width:130px;font-weight:500" value="${(p.nom || '').replace(/"/g, '&quot;')}" onchange="updateInline('${p.id}', 'nom', this.value)" /></div></td>
+      <td><div style="display:flex;align-items:center;gap:6px"><input type="tel" class="inline-edit" style="width:105px;color:var(--blue);font-family:monospace;letter-spacing:0.5px" value="${(p.telephone || '').replace(/"/g, '&quot;')}" placeholder="N° Tél..." onchange="updateInline('${p.id}', 'telephone', this.value)" /><a href="tel:${p.telephone || ''}" title="Appeler ce numéro" style="color:var(--teal);display:${p.telephone ? 'flex' : 'none'};align-items:center" tabindex="-1"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></a></div></td>
+      <td><input class="inline-edit" style="width:110px;color:var(--text2)" value="${(p.entreprise || '').replace(/"/g, '&quot;')}" onchange="updateInline('${p.id}', 'entreprise', this.value)" /></td>
+      <td><select class="badge-select" style="${badgeCss[p.statut] || ''}" onchange="changeStatus('${p.id}',this.value)">${Object.keys(statusMap).map(k => `<option value="${k}"${k === p.statut ? ' selected' : ''}>${statusMap[k]}</option>`).join('')}</select></td>
+      <td style="white-space:nowrap"><input type="number" class="inline-edit inline-edit-sm" style="font-weight:500" value="${p.valeur || 0}" onchange="updateInline('${p.id}', 'valeur', this.value)" /> €</td>
+      <td><div class="score-wrap"><div class="score-track"><div class="score-fill" style="width:${p.score || 0}%;background:${sc}"></div></div><input type="number" class="inline-edit" style="width:40px;padding:2px;font-size:11px;text-align:right" value="${p.score || 0}" min="0" max="100" onchange="updateInline('${p.id}', 'score', this.value)" /></div></td>
+      <td><select class="inline-select" onchange="updateInline('${p.id}', 'resp', this.value)">${teamMembers.map(m => `<option ${p.resp === m.name ? 'selected' : ''}>${m.name}</option>`).join('')}</select></td>
+      <td><input type="date" class="inline-date" value="${p.date || ''}" onchange="updateInline('${p.id}', 'date', this.value)" /></td>
+      <td>${relanceHtml}</td>
+      <td><input class="inline-edit inline-edit-note" value="${(p.note || '').replace(/"/g, '&quot;')}" placeholder="Ajouter une note..." onchange="updateInline('${p.id}', 'note', this.value)" /></td>
+      <td><div class="act-btns">
+        <button class="call-log-btn" onclick="openCallModal('${p.id}')" title="Journal d'appels"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>${callCount > 0 ? '<span class="call-count">' + callCount + '</span>' : ''}</button>
+        <button class="act-btn" onclick="duplicateProspect('${p.id}')">Dupli.</button>
+        <button class="act-btn" onclick="deleteProspect('${p.id}')">Suppr.</button>
+      </div></td>
+    </tr>`;
+    }
+
+    function renderProspectsTable() {
+      const body = document.getElementById('proTableBody');
+      if (!body) return;
+
+      renderProPersonBtns();
+
+      const q = (document.getElementById('proSearchQ') || {}).value || '';
+      const qLow = q.toLowerCase();
+      const st = getProSelectedStatuses();
+      const today = new Date().toISOString().split('T')[0];
+
+      let rows = prospects.filter(p => {
+        if (p.statut === 'exemple') return false;
+
+        const stReal = st.filter(x => x !== 'exemple');
+        if (stReal.length > 0 && !stReal.includes(p.statut)) return false;
+        if (proFilterResp && p.resp !== proFilterResp) return false;
+        if (proShowOnlyToday) {
+          if (p.statut === 'signe' || p.statut === 'perdu') return false;
+          if (!p.dateRelance || p.dateRelance > today) return false;
+        }
+        if (proShowPriority) {
+          const isHighScore = (p.score || 0) >= 60;
+          const isAdvanced = ['rdv_planifie', 'rdv_effectue'].includes(p.statut);
+          const isUrgentRelance = p.dateRelance && p.dateRelance <= today && p.statut !== 'signe' && p.statut !== 'perdu';
+          if (!isHighScore && !isAdvanced && !isUrgentRelance) return false;
+        }
+        if (qLow && !p.nom.toLowerCase().includes(qLow) && !p.entreprise.toLowerCase().includes(qLow)
+          && !(p.source || '').toLowerCase().includes(qLow) && !(p.resp || '').toLowerCase().includes(qLow)
+          && !(p.note || '').toLowerCase().includes(qLow) && !(p.telephone || '').replace(/\s+/g, '').includes(qLow.replace(/\s+/g, ''))) return false;
+        const df = (document.getElementById('proFilterDate') || {}).value || '';
+        if (df) {
+          if (df === 'today' && p.date !== today) return false;
+          if (df === 'week') { const w = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]; if (p.date < w) return false; }
+          if (df === 'month') { const m = new Date(); m.setDate(1); if (p.date < m.toISOString().split('T')[0]) return false; }
+          if (df === 'dormant') { const w = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]; if (p.date >= w) return false; }
+        }
+        return true;
+      });
+
+      if (proSortCol) {
+        rows.sort((a, b) => {
+          let va = a[proSortCol], vb = b[proSortCol];
+          if (proSortCol === 'valeur' || proSortCol === 'score') { va = Number(va) || 0; vb = Number(vb) || 0; }
+          else { va = (va || '').toString().toLowerCase(); vb = (vb || '').toString().toLowerCase(); }
+          if (va < vb) return proSortDir === 'asc' ? -1 : 1;
+          if (va > vb) return proSortDir === 'asc' ? 1 : -1;
+          return 0;
+        });
+      } else {
+        rows.sort((a, b) => {
+          const aDone = ['signe', 'perdu', 'npai'].includes(a.statut), bDone = ['signe', 'perdu', 'npai'].includes(b.statut);
+          if (aDone && !bDone) return 1;
+          if (!aDone && bDone) return -1;
+          const aRel = a.dateRelance || '9999-99-99', bRel = b.dateRelance || '9999-99-99';
+          return aRel < bRel ? -1 : aRel > bRel ? 1 : 0;
+        });
+      }
+
+      const limit = parseInt((document.getElementById('proRowLimit') || {}).value) || 0;
+      const display = limit > 0 ? rows.slice(0, limit) : rows;
+
+      body.innerHTML = display.map(p => buildRowHtml(p, today)).join('');
+
+      if (typeof flatpickr !== 'undefined') {
+        flatpickr("#page-prospects .inline-date", { locale: "fr", dateFormat: "Y-m-d", allowInput: true });
+      }
+
+      const suffix = display.length !== rows.length ? ` sur ${rows.length}` : '';
+      const tc = document.getElementById('proTblCount');
+      if (tc) tc.textContent = `${display.length} prospect${display.length > 1 ? 's' : ''} affiché${display.length > 1 ? 's' : ''}${suffix}`;
+
+      const ca = document.getElementById('proCheckAll'); if (ca) ca.checked = false;
+      updateProBulkBar();
+    }
+
+    // ─── EXEMPLES PAGE ───
+    function renderExemplesTable() {
+      const body = document.getElementById('exempleTableBody');
+      if (!body) return;
+
+      const examples = EXAMPLE_PROSPECTS;
+
+      // Summary cards
+      const summary = document.getElementById('exempleSummary');
+      if (summary) {
+        const totalVal = examples.reduce((s, p) => s + (Number(p.valeur) || 0), 0);
+        const avgScore = examples.length > 0 ? Math.round(examples.reduce((s, p) => s + (Number(p.score) || 0), 0) / examples.length) : 0;
+        const withRelance = examples.filter(p => p.dateRelance).length;
+        summary.innerHTML = `
+          <div class="kpi" style="padding:14px 18px">
+            <div class="kpi-label"><span>Fiches exemples</span></div>
+            <div class="kpi-val" style="font-size:20px">${examples.length}</div>
+          </div>
+          <div class="kpi" style="padding:14px 18px">
+            <div class="kpi-label"><span>Valeur totale</span></div>
+            <div class="kpi-val" style="font-size:20px">${totalVal.toLocaleString('fr-FR')} €</div>
+          </div>
+          <div class="kpi" style="padding:14px 18px">
+            <div class="kpi-label"><span>Score moyen</span></div>
+            <div class="kpi-val" style="font-size:20px">${avgScore}/5</div>
+          </div>`;
+      }
+
+      body.innerHTML = examples.map(p => {
+        const [bg, fg] = (p.av || '#E6F1FB:#185FA5').split(':');
+        const initiales = p.nom ? p.nom.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : '?';
+        const relanceStr = p.dateRelance ? new Date(p.dateRelance).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        const createdStr = p.created ? new Date(p.created).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        return `<tr>
+          <td><div class="prospect-name"><div class="av-sm" style="background:${bg || '#E6F1FB'};color:${fg || '#185FA5'}">${initiales}</div>${p.nom}</div></td>
+          <td style="font-family:monospace;color:var(--blue)">${p.tel || '—'}</td>
+          <td style="color:var(--text2)">${p.entreprise || '—'}</td>
+          <td style="font-weight:500">${(p.valeur || 0).toLocaleString('fr-FR')} €</td>
+          <td>${p.score || 0}/5</td>
+          <td>${p.resp || '—'}</td>
+          <td>${relanceStr}</td>
+          <td style="color:var(--text3);font-size:12px">${createdStr}</td>
+        </tr>`;
+      }).join('');
+
+      const tc = document.getElementById('exempleTblCount');
+      if (tc) tc.textContent = `${examples.length} fiche${examples.length > 1 ? 's' : ''} exemple`;
+    }
+
     // ── THEME TOGGLE ──
     function toggleTheme() {
       const isDark = document.documentElement.classList.toggle('dark');
