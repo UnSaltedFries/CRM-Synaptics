@@ -726,16 +726,32 @@
     }
 
     .bulk-bar {
+      position: fixed;
+      bottom: 24px;
+      left: calc(50% + 28px); /* Offset for sidebar */
+      transform: translateX(-50%);
       background: var(--blue);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       color: white;
-      padding: 10px 16px;
-      border-radius: var(--radius);
-      margin-bottom: 10px;
+      padding: 10px 24px;
+      border-radius: 50px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      font-size: 13px;
-      animation: fadeInUp 0.2s ease;
+      gap: 16px;
+      font-size: 14px;
+      z-index: 2000;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      animation: slideUp 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+      width: fit-content;
+      white-space: nowrap;
+      pointer-events: auto;
+    }
+
+    @keyframes slideUp {
+      from { transform: translate(-50%, 40px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
     }
 
     .bulk-bar select,
@@ -1991,6 +2007,9 @@
       text-align: left;
       transition: background 0.12s, color 0.12s;
       white-space: nowrap;
+    }
+
+    .sidebar.open .sidebar-item {
       overflow: hidden;
     }
 
@@ -2814,6 +2833,7 @@
                   </div>
                 </div>
               </div>
+              <div style="text-align:right;font-size:11px;color:var(--text3);margin-top:20px;font-weight:500;font-style:italic">made by lilian</div>
             </div>
           </div><!-- /page-parametres -->
 
