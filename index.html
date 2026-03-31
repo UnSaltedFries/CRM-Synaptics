@@ -1016,15 +1016,29 @@
       border-color: var(--blue);
     }
 
-    select.tbl-filter {
-      padding: 8px 12px;
-      border: 0.5px solid var(--border2);
-      border-radius: var(--radius);
+    .tbl-filter {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
       background: var(--surface2);
       color: var(--text);
       font-size: 13px;
-      cursor: pointer;
+      font-family: inherit;
       outline: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394A3B8' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 12px;
+      padding-right: 32px;
+    }
+
+    .tbl-filter:hover {
+      border-color: var(--blue);
+      background: var(--surface2);
+      transform: translateY(-1px);
     }
 
     /* Custom Multi-Select for Status */
@@ -2389,7 +2403,7 @@
                   Prospects
                 </div>
                 <div class="table-controls">
-                  <div id="proPersonBtns" style="display:flex;gap:4px;margin-right:8px;flex-wrap:wrap"></div>
+                  <select class="tbl-filter" id="proPersonSelect" onchange="setProResp(this.value)" style="width:140px"></select>
                   <input class="tbl-search" type="text" placeholder="Rechercher..." id="proSearchQ"
                     oninput="renderProspectsTable()" />
                   <select class="tbl-filter" id="proFilterDate" onchange="renderProspectsTable()">
@@ -4196,13 +4210,12 @@
     }
 
     function renderProPersonBtns() {
-      const el = document.getElementById('proPersonBtns');
-      if (!el) return;
-      const names = ['Tous', ...teamMembers.map(m => m.name)];
-      el.innerHTML = names.map(n => {
-        const isActive = (n === 'Tous' && !proFilterResp) || proFilterResp === n;
-        const style = isActive ? 'background:var(--blue);color:#fff;border-color:var(--blue)' : '';
-        return `<button class="btn-today" style="font-size:11px;padding:4px 10px;${style}" onclick="setProResp('${n === 'Tous' ? '' : n}')">${n}</button>`;
+      const sel = document.getElementById('proPersonSelect');
+      if (!sel) return;
+      const names = teamMembers.map(m => m.name);
+      sel.innerHTML = `<option value="">Équipe (Tous)</option>` + names.map(n => {
+        const selected = proFilterResp === n ? 'selected' : '';
+        return `<option value="${n}" ${selected}>${n}</option>`;
       }).join('');
     }
 
