@@ -3450,22 +3450,24 @@
       
       const isRelanceUrg = p.dateRelance && p.dateRelance <= today && p.statut !== 'signe' && p.statut !== 'perdu';
       const relanceClass = isRelanceUrg ? 'relance-urgent' : '';
+      const relanceStr = p.dateRelance ? new Date(p.dateRelance).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—';
+      const createdStr = p.date ? new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—';
 
       return `<tr data-rid="${p.id}">
         <td><input type="checkbox" class="pro-row-cb" value="${p.id}" onclick="updateProBulkBar()"/></td>
         <td><div class="prospect-name">
           <div class="av-sm" style="background:${bg};color:${fg}">${p.initiales || '+'}</div>
-          <input type="text" class="inline-input" style="font-weight:600" value="${p.nom || ''}" onchange="updateInline('${p.id}','nom',this.value)"/>
+          <span style="font-weight:600">${p.nom || ''}</span>
         </div></td>
-        <td><input type="tel" class="inline-input" value="${p.telephone || ''}" onchange="updateInline('${p.id}','telephone',this.value)"/></td>
-        <td><input type="email" class="inline-input" value="${p.email || ''}" onchange="updateInline('${p.id}','email',this.value)"/></td>
-        <td><input type="text" class="inline-input" value="${p.entreprise || ''}" onchange="updateInline('${p.id}','entreprise',this.value)"/></td>
+        <td style="font-size:12px;color:var(--text2)">${p.telephone || '—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${p.email || '—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${p.entreprise || '—'}</td>
         <td>${statusSelectHtml(p)}</td>
-        <td><input type="number" class="inline-input" style="width:70px" value="${p.valeur || 0}" onchange="updateInline('${p.id}','valeur',this.value)"/></td>
+        <td style="font-weight:600">${(Number(p.valeur) || 0).toLocaleString('fr-FR')}€</td>
         <td><div class="score-wrap"><div class="score-track"><div class="score-fill" style="width:${p.score || 0}%;background:${sc}"></div></div><span style="font-size:11px;margin-left:5px">${p.score || 0}%</span></div></td>
-        <td><div style="font-size:12px;color:var(--text2)">${p.resp || '—'}</div></td>
-        <td><div style="font-size:11px;color:var(--text3)">${p.date || '—'}</div></td>
-        <td><input type="date" class="inline-date ${relanceClass}" value="${p.dateRelance || ''}" onchange="updateInline('${p.id}','dateRelance',this.value)"/></td>
+        <td style="font-size:12px;color:var(--text2)">${p.resp || '—'}</td>
+        <td style="font-size:11px;color:var(--text3)">${createdStr}</td>
+        <td class="${relanceClass}" style="font-size:11px;font-weight:${isRelanceUrg?'600':'400'}">${relanceStr}</td>
         <td>${noteIconHtml}</td>
         <td><button class="btn-action" onclick="openModal('${p.id}')">Détails</button></td>
       </tr>`;
