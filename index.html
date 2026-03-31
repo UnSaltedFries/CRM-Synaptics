@@ -3565,14 +3565,18 @@
       
       // Calculate activity for last 7 days (New prospects + Calls)
       const data = [];
-      const today = new Date();
+      const now = new Date();
+      // Use local date at midnight to avoid UTC offsets
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
       for (let i = 6; i >= 0; i--) {
         const d = new Date(today);
         d.setDate(d.getDate() - i);
-        const ds = d.toISOString().split('T')[0];
+        // Compare with local YYYY-MM-DD
+        const ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         
-        const newPros = prospects.filter(p => p.date === ds).length;
-        const newCalls = prospects.reduce((s, p) => s + (p.appels || []).filter(a => a.date === ds).length, 0);
+        const newPros = prospects.filter(p => (p.date || '').split('T')[0] === ds).length;
+        const newCalls = prospects.reduce((s, p) => s + (p.appels || []).filter(a => (a.date || '').split('T')[0] === ds).length, 0);
         data.push(newPros + newCalls);
       }
 
@@ -4043,6 +4047,7 @@
       const data = {
         nom, initiales, av,
         telephone: document.getElementById('mTelephone').value.trim(),
+        email: document.getElementById('mEmail').value.trim(),
         entreprise: document.getElementById('mEntreprise').value.trim(),
         statut: document.getElementById('mStatut').value,
         source: document.getElementById('mSource').value,
