@@ -2359,9 +2359,33 @@
       height: 18px;
       stroke: currentColor;
       fill: none;
-      stroke-width: 2;
+      stroke-width: 1.8;
       stroke-linecap: round;
       stroke-linejoin: round;
+    }
+
+    #proBulkBar {
+      position: fixed;
+      bottom: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 500;
+    }
+    #proBulkBar.active {
+      bottom: 24px;
+    }
+    .bulk-bar {
+      background: var(--surface);
+      border: 0.5px solid var(--border2);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      padding: 10px 24px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
 
     /* ── FLATPICKR CUSTOM THEME ── */
@@ -2619,47 +2643,15 @@
               </div>
             </div>
 
-            <!-- DASHBOARD: BOTTOM ROW (TABLE + SPARKLINE) -->
-            <div style="display:grid;grid-template-columns: 2fr 1fr;gap:20px;margin-bottom:20px">
-              <!-- TABLE RÉSUMÉ -->
-              <div class="table-card" style="margin-bottom:0">
-                <div class="table-top">
-                  <div class="ct" style="display:flex;align-items:center;gap:10px">
-                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8">
-                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                    </svg>
-                    Résumé des Prospects
-                  </div>
-                  <div class="table-controls">
-                    <input class="tbl-search" type="text" placeholder="Rechercher..." id="searchQ" oninput="renderTable()" />
-                    <select class="tbl-filter" id="filterResp" onchange="renderTable()">
-                      <option value="">Tous les commerciaux</option>
-                      <option value="Grégory">Grégory</option>
-                      <option value="Édouard">Édouard</option>
-                      <option value="Maxence">Maxence</option>
-                    </select>
-                  </div>
-                </div>
-                <div style="overflow-x:auto">
-                  <table style="width:100%">
-                    <thead>
-                      <tr><th>Prospect</th><th>Statut</th><th>Score</th><th>Note</th></tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                  </table>
-                </div>
+            <!-- DASHBOARD: ACTIVITY SPARKLINE -->
+            <div class="pipeline-card" style="margin-bottom:20px; width: 100%; display:flex; flex-direction:column">
+              <div class="card-header">
+                <div class="card-title" style="color:var(--text)">Activité des 7 derniers jours</div>
               </div>
-
-              <!-- ACTIVITY SPARKLINE -->
-              <div class="pipeline-card" style="margin-bottom:0; display:flex; flex-direction:column">
-                <div class="card-header">
-                  <div class="card-title" style="color:var(--text)">Activité (7j)</div>
-                </div>
-                <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center">
-                  <div id="activitySparkline" style="height:140px;width:100%"></div>
-                  <div style="display:flex;justify-content:space-between;margin-top:15px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">
-                    <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
-                  </div>
+              <div style="padding:24px; flex:1; display:flex; flex-direction:column; justify-content:center">
+                <div id="activitySparkline" style="height:160px; width:100%"></div>
+                <div style="display:flex; justify-content:space-between; margin-top:20px; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:1.5px; font-weight:600">
+                  <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
                 </div>
               </div>
             </div>
@@ -2852,9 +2844,12 @@
                     <option value="0">Tout</option>
                   </select>
                 </div>
-              </div>
             </div>
-          </div><!-- /page-prospects -->
+          </div>
+
+          <!-- BULK ACTION BAR (BOTTOM OVERLAY) -->
+          <div id="proBulkBar"></div>
+        </div><!-- /page-prospects -->
 
           <!-- ══ PAGE: EXEMPLES ══ -->
           <div class="page" id="page-exemples">
@@ -3530,7 +3525,7 @@
       const sc = p.score > 70 ? '#639922' : p.score > 40 ? '#BA7517' : '#E24B4A';
       
       const noteIconHtml = `<div class="note-cell-icon" data-tt="${(p.note || 'Pas de note').replace(/"/g, '&quot;')}" onclick="openNoteModal('${p.id}')">
-        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       </div>`;
       
       const isRelanceUrg = p.dateRelance && p.dateRelance <= today && p.statut !== 'signe' && p.statut !== 'perdu';
@@ -3542,17 +3537,17 @@
         <td><input type="checkbox" class="pro-row-cb" value="${p.id}" onclick="updateProBulkBar()"/></td>
         <td><div class="prospect-name">
           <div class="av-sm" style="background:${bg};color:${fg}">${p.initiales || '+'}</div>
-          <input type="text" class="ghost-input" style="font-weight:600" value="${p.nom || ''}" onchange="updateInline('${p.id}','nom',this.value)"/>
+          <span style="font-weight:600">${p.nom || ''}</span>
         </div></td>
-        <td><input type="tel" class="ghost-input" value="${p.telephone || ''}" onchange="updateInline('${p.id}','telephone',this.value)" style="color:var(--text2);font-size:12px"/></td>
-        <td><input type="email" class="ghost-input" value="${p.email || ''}" onchange="updateInline('${p.id}','email',this.value)" style="color:var(--text2);font-size:12px"/></td>
-        <td><input type="text" class="ghost-input" value="${p.entreprise || ''}" onchange="updateInline('${p.id}','entreprise',this.value)" style="color:var(--text2);font-size:12px"/></td>
+        <td style="font-size:12px;color:var(--text2)">${p.telephone || '—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${p.email || '—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${p.entreprise || '—'}</td>
         <td>${statusSelectHtml(p)}</td>
-        <td><div style="display:flex;align-items:center"><input type="number" class="ghost-input" value="${p.valeur || 0}" onchange="updateInline('${p.id}','valeur',this.value)" style="font-weight:600;width:70px"/><span>€</span></div></td>
-        <td><div class="score-wrap"><div class="score-track"><div class="score-fill" style="width:${p.score || 0}%;background:${sc}"></div></div><input type="number" class="ghost-input" value="${p.score || 0}" onchange="updateInline('${p.id}','score',this.value)" style="font-size:11px;width:40px;margin-left:5px"/><span>%</span></div></td>
+        <td style="font-weight:600">${(Number(p.valeur) || 0).toLocaleString('fr-FR')}€</td>
+        <td><div class="score-wrap"><div class="score-track"><div class="score-fill" style="width:${p.score || 0}%;background:${sc}"></div></div><span style="font-size:11px;margin-left:5px">${p.score || 0}%</span></div></td>
         <td style="font-size:12px;color:var(--text2)">${p.resp || '—'}</td>
         <td style="font-size:11px;color:var(--text3)">${createdStr}</td>
-        <td><input type="date" class="ghost-input ${relanceClass}" value="${p.dateRelance || ''}" onchange="updateInline('${p.id}','dateRelance',this.value)" style="font-size:11px;padding:0"/></td>
+        <td class="${relanceClass}" style="font-size:11px;font-weight:${isRelanceUrg?'600':'400'}">${relanceStr}</td>
         <td>${noteIconHtml}</td>
         <td><button class="btn-action" onclick="openModal('${p.id}')">Détails</button></td>
       </tr>`;
@@ -4039,14 +4034,6 @@
       sortCol = null;
       sortDir = 'asc';
       renderAll();
-      // Focus the new name input if on prospects page
-      setTimeout(() => {
-        const tr = document.querySelector(`tr[data-rid="${newId}"]`);
-        if (tr) {
-          const inp = tr.querySelector('input.ghost-input');
-          if (inp) inp.focus();
-        }
-      }, 50);
     }
 
     function saveProspect() {
@@ -4186,57 +4173,57 @@
       renderAll();
     }
 
-    // ─── KANBAN ───
-    var draggedProspectId = null;
-    function renderKanban() {
-      const board = document.getElementById('kanbanBoard');
-      if (!board) return;
-      const cols = ['appeler', 'appele', 'repondu', 'rdv_planifie', 'rdv_effectue', 'signe', 'perdu'];
-      const colColors = {
-        appeler: '#4B8DF8', appele: '#7F77DD', repondu: '#EF9F27',
-        rdv_planifie: '#D4A017', rdv_effectue: '#1D9E75', signe: '#639922', perdu: '#E24B4A'
-      };
-      board.innerHTML = cols.map(st => {
-        const items = prospects.filter(p => p.statut === st);
-        return `<div class="kanban-col" data-status="${st}"
-      ondragover="event.preventDefault();this.classList.add('drag-over')"
-      ondragleave="this.classList.remove('drag-over')"
-      ondrop="dropKanban(event,'${st}');this.classList.remove('drag-over')">
-      <div class="kanban-col-header">
-        <span style="display:flex;align-items:center;gap:6px">
-          <span style="width:8px;height:8px;border-radius:50%;background:${colColors[st]}"></span>
-          ${statusMap[st]}
-        </span>
-        <span class="kanban-col-count">${items.length}</span>
-      </div>
-      <div class="kanban-cards">
-        ${items.map(p => {
-          const [bg, fg] = p.av.split(':');
-          return `<div class="kanban-card" draggable="true"
-            ondragstart="draggedProspectId='${p.id}';this.classList.add('dragging')"
-            ondragend="this.classList.remove('dragging')"
-            ondblclick="openModal('${p.id}')">
-            <div class="kanban-card-name"><span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${bg};color:${fg};text-align:center;line-height:20px;font-size:10px;margin-right:5px;vertical-align:middle">${p.initiales}</span>${p.nom}</div>
-            <div class="kanban-card-company">${p.entreprise}</div>
-            <div class="kanban-card-footer">
-              <span class="kanban-card-val">${Number(p.valeur).toLocaleString('fr-FR')} €</span>
-              <span>${p.resp}</span>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-      }).join('');
+    // ─── MULTI-SELECT & BULK ACTIONS ───
+    function toggleProChecks(checked) {
+      document.querySelectorAll('.pro-row-cb').forEach(cb => cb.checked = checked);
+      updateProBulkBar();
     }
-    function dropKanban(e, newStatus) {
-      e.preventDefault();
-      if (!draggedProspectId) return;
-      const p = prospects.find(x => x.id === draggedProspectId);
-      if (p) { p.statut = newStatus; renderAll(); }
-      draggedProspectId = null;
+    function getProSelectedIds() {
+      return Array.from(document.querySelectorAll('.pro-row-cb:checked')).map(cb => cb.value);
+    }
+    function updateProBulkBar() {
+      const ids = getProSelectedIds();
+      const bar = document.getElementById('proBulkBar');
+      if (!bar) return;
+      if (ids.length === 0) { 
+        bar.innerHTML = ''; 
+        bar.classList.remove('active');
+        return; 
+      }
+      bar.classList.add('active');
+      bar.innerHTML = `<div class="bulk-bar">
+    <span style="font-size:13px;font-weight:600"><b>${ids.length}</b> sélectionné${ids.length > 1 ? 's' : ''}</span>
+    <select id="bulkProStatus" class="badge-select" style="background:var(--surface2);color:var(--text);border:0.5px solid var(--border2);height:32px;padding:0 12px;border-radius:8px">
+      ${Object.keys(statusMap).map(k => `<option value="${k}">${statusMap[k]}</option>`).join('')}
+    </select>
+    <button class="btn-action" onclick="bulkProChangeStatus()" style="padding:6px 14px">Changer statut</button>
+    <select id="bulkProResp" class="badge-select" style="background:var(--surface2);color:var(--text);border:0.5px solid var(--border2);height:32px;padding:0 12px;border-radius:8px">
+      ${teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
+    </select>
+    <button class="btn-action" onclick="bulkProAssign()" style="padding:6px 14px">Assigner</button>
+    <button class="btn-action" onclick="bulkProDelete()" style="background:rgba(224,60,60,0.8);padding:6px 14px">Supprimer</button>
+    <button class="bulk-close" onclick="toggleProChecks(false)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;padding:0 10px">&times;</button>
+  </div>`;
+    }
+    function bulkProChangeStatus() {
+      const ids = getProSelectedIds();
+      const st = document.getElementById('bulkProStatus').value;
+      ids.forEach(id => { const p = prospects.find(x => x.id === id); if (p) p.statut = st; });
+      renderAll();
+    }
+    function bulkProAssign() {
+      const ids = getProSelectedIds();
+      const r = document.getElementById('bulkProResp').value;
+      ids.forEach(id => { const p = prospects.find(x => x.id === id); if (p) p.resp = r; });
+      renderAll();
+    }
+    function bulkProDelete() {
+      const ids = getProSelectedIds();
+      if (!confirm(`Supprimer ${ids.length} prospect(s) ?`)) return;
+      prospects = prospects.filter(p => !ids.includes(p.id));
+      renderAll();
     }
 
-    // ─── SIDEBAR ───
     function toggleSidebar() {
       const sb = document.getElementById('sidebar');
       const ov = document.getElementById('sidebarOverlay');
