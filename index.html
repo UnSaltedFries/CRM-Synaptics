@@ -725,29 +725,7 @@
       cursor: pointer;
     }
 
-    .bulk-bar {
-      position: fixed;
-      bottom: 24px;
-      left: calc(50% + 28px); /* Offset for sidebar */
-      transform: translateX(-50%);
-      background: var(--blue);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      color: white;
-      padding: 10px 24px;
-      border-radius: 50px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      font-size: 14px;
-      z-index: 2000;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      animation: slideUp 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-      width: fit-content;
-      white-space: nowrap;
-      pointer-events: auto;
-    }
+    /* Consolidated bulk-bar styles further down */
 
     @keyframes slideUp {
       from { transform: translate(-50%, 40px); opacity: 0; }
@@ -2366,26 +2344,31 @@
 
     #proBulkBar {
       position: fixed;
-      bottom: -100px;
+      bottom: -120px;
       left: 50%;
       transform: translateX(-50%);
-      transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      z-index: 500;
+      transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 4000;
+      opacity: 0;
+      pointer-events: none;
     }
     #proBulkBar.active {
-      bottom: 24px;
+      bottom: 32px;
+      opacity: 1;
+      pointer-events: auto;
     }
     .bulk-bar {
-      background: var(--surface);
-      border: 0.5px solid var(--border2);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-      padding: 10px 24px;
-      border-radius: 16px;
+      background: rgba(26, 26, 26, 0.8);
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      padding: 8px 16px 8px 24px;
+      border-radius: 18px;
       display: flex;
       align-items: center;
-      gap: 16px;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      gap: 14px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: white;
     }
 
     /* ── FLATPICKR CUSTOM THEME ── */
@@ -4221,16 +4204,23 @@
       }
       bar.classList.add('active');
       bar.innerHTML = `<div class="bulk-bar">
-    <span style="font-size:13px;font-weight:600"><b>${ids.length}</b> sélectionné${ids.length > 1 ? 's' : ''}</span>
-    <select id="bulkProStatus" class="badge-select" style="background:var(--surface2);color:var(--text);border:0.5px solid var(--border2);height:32px;padding:0 12px;border-radius:8px">
-      ${Object.keys(statusMap).map(k => `<option value="${k}">${statusMap[k]}</option>`).join('')}
-    </select>
-    <button class="btn-action" onclick="bulkProChangeStatus()" style="padding:6px 14px">Changer statut</button>
-    <select id="bulkProResp" class="badge-select" style="background:var(--surface2);color:var(--text);border:0.5px solid var(--border2);height:32px;padding:0 12px;border-radius:8px">
-      ${teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
-    </select>
-    <button class="btn-action" onclick="bulkProAssign()" style="padding:6px 14px">Assigner</button>
-    <button class="btn-action" onclick="bulkProDelete()" style="background:rgba(224,60,60,0.8);padding:6px 14px">Supprimer</button>
+    <span style="font-size:13px;font-weight:600;margin-right:12px">${ids.length} sélectionné${ids.length > 1 ? 's' : ''}</span>
+    
+    <div style="display:flex;align-items:center;gap:6px">
+      <select id="bulkProStatus" class="badge-select" style="background:var(--surface2);color:var(--text);border:0.5px solid var(--border2);height:32px;padding:0 8px;border-radius:8px;font-size:12px">
+        ${Object.keys(statusMap).map(k => `<option value="${k}">${statusMap[k]}</option>`).join('')}
+      </select>
+      <button class="btn-action" onclick="bulkProChangeStatus()" style="padding:4px 12px;font-size:11px" title="Changer statut">Statut</button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:6px">
+      <select id="bulkProResp" class="badge-select" style="background:var(--surface2);color:var(--text);border:0.5px solid var(--border2);height:32px;padding:0 8px;border-radius:8px;font-size:12px">
+        ${teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
+      </select>
+      <button class="btn-action" onclick="bulkProAssign()" style="padding:4px 12px;font-size:11px" title="Assigner">Propriétaire</button>
+    </div>
+
+    <button class="btn-action" onclick="bulkProDelete()" style="background:rgba(224,60,60,0.1);color:#ff5f5f;border:0.5px solid rgba(224,60,60,0.2);padding:6px 14px;font-size:11px;margin-left:auto" title="Supprimer">Supprimer</button>
     <button class="bulk-close" onclick="toggleAllProChecks(false)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;padding:0 10px">&times;</button>
   </div>`;
     }
