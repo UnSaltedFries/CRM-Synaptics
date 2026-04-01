@@ -3605,7 +3605,6 @@
       renderTable(); 
       renderProspectsTable();
       renderTeamStats(); 
-      renderKanban(); 
       renderSparkline();
       saveData(); 
     }
@@ -3740,6 +3739,7 @@
           p.addEventListener('animationend', () => { 
             p.style.opacity = p.dataset.baseOpacity; 
             p.style.animation = 'none'; // Clear animation after run
+            if (i === currentData.length - 2) window.pipeAnimated = true;
           });
         } else {
           p.style.opacity = op;
