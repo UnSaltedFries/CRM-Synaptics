@@ -2650,8 +2650,9 @@
               </div>
               <div style="padding:24px; flex:1; display:flex; flex-direction:column; justify-content:center">
                 <div id="activitySparkline" style="height:160px; width:100%"></div>
-                <div style="display:flex; justify-content:space-between; margin-top:20px; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:1.5px; font-weight:600">
-                  <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+                <div id="activityDays" style="display:flex; justify-content:space-between; margin-top:20px; font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:1.5px; font-weight:600"></div>
+                <div style="display:flex; gap:16px; margin-top:16px; padding-top:12px; border-top:0.5px solid var(--border2); font-size:11px; color:var(--text2)">
+                  <div style="display:flex; align-items:center; gap:6px"><div style="width:8px; height:8px; border-radius:100%; background:var(--blue)"></div> Activités cumulées (Prospects + Appels)</div>
                 </div>
               </div>
             </div>
@@ -3593,8 +3594,27 @@
         </defs>
         <path d="M 0 ${H} L ${points} L ${W} ${H} Z" fill="url(#sparkGradient)" />
         <polyline points="${points}" fill="none" stroke="var(--blue)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(99, 102, 241, 0.4))" />
-        ${data.map((v, i) => `<circle cx="${(i * W) / (data.length - 1)}" cy="${H - (v / max) * H * 0.8 - 10}" r="4" fill="var(--blue)" stroke="#1a1a1a" stroke-width="1.5" />`).join('')}
+        ${data.map((v, i) => {
+          const x = (i * W) / (data.length - 1);
+          const y = H - (v / max) * H * 0.8 - 10;
+          const d = new Date(today);
+          d.setDate(d.getDate() - (6 - i));
+          const dateStr = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+          return `<circle cx="${x}" cy="${y}" r="6" fill="var(--blue)" stroke="#1a1a1a" stroke-width="1.5" 
+            data-tt="${dateStr} : ${v} activité${v > 1 ? 's' : ''}" style="cursor:pointer" />`;
+        }).join('')}
       </svg>`;
+
+      // Render Day Labels
+      const daysEl = document.getElementById('activityDays');
+      if (daysEl) {
+        daysEl.innerHTML = data.map((v, i) => {
+          const d = new Date(today);
+          d.setDate(d.getDate() - (6 - i));
+          const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '').toUpperCase();
+          return `<span>${dayName}</span>`;
+        }).join('');
+      }
     }
 
     function renderAll() { 
@@ -4433,6 +4453,14 @@
       }
     }
 
+    let proFilterType = 'all';
+    function filterProList(type, el) {
+      proFilterType = type;
+      document.querySelectorAll('.nav-sub-btn').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+      renderProspectsTable();
+    }
+
     function sortProTable(col) {
       if (proSortCol === col) proSortDir = proSortDir === 'asc' ? 'desc' : 'asc';
       else { proSortCol = col; proSortDir = 'asc'; }
@@ -4463,6 +4491,14 @@
         if (st.length > 0 && !st.includes(p.statut)) return false;
         if (proFilterResp && p.resp !== proFilterResp) return false;
         if (qLow && !p.nom.toLowerCase().includes(qLow) && !p.entreprise.toLowerCase().includes(qLow)) return false;
+        
+        if (proFilterType === 'prioritaires') {
+          const isHot = ['rdv_planifie', 'rdv_effectue', 'signe'].includes(p.statut);
+          if (!isHot && (p.score || 0) < 80) return false;
+        } else if (proFilterType === 'aujourdhui') {
+          if (!p.dateRelance || p.dateRelance !== today) return false;
+        }
+        
         return true;
       });
 
@@ -4481,16 +4517,27 @@
     function renderExemplesTable() {
       const body = document.getElementById('exempleTableBody');
       if (!body) return;
+      const today = new Date().toISOString().split('T')[0];
       body.innerHTML = EXAMPLE_PROSPECTS.map(p => {
         const { initiales, av } = avatarFromName(p.nom);
         const [bg, fg] = av.split(':');
+        const sc = p.score > 70 ? '#639922' : p.score > 40 ? '#BA7517' : '#E24B4A';
+        const valStr = (Number(p.valeur) || 0).toLocaleString('fr-FR') + '€';
+        
         return `<tr>
           <td><div class="prospect-name"><div class="av-sm" style="background:${bg};color:${fg}">${initiales}</div><span>${p.nom}</span></div></td>
-          <td style="font-family:monospace;color:var(--blue)">${p.telephone || p.tel || '—'}</td>
+          <td style="font-family:monospace;color:var(--blue)">${p.telephone || '—'}</td>
           <td style="color:var(--text2)">${p.entreprise || '—'}</td>
-          <td style="font-weight:600">${(Number(p.valeur) || 0).toLocaleString('fr-FR')}€</td>
-          <td>${p.score || 0}%</td>
+          <td style="font-weight:600">${valStr}</td>
+          <td>
+             <div class="score-wrap">
+               <div class="score-track"><div class="score-fill" style="width:${p.score || 0}%;background:${sc}"></div></div>
+               <span style="font-size:11px;color:var(--text2);margin-left:8px">${p.score || 0}%</span>
+             </div>
+          </td>
           <td>${p.resp || '—'}</td>
+          <td style="font-size:11px;color:var(--text3)">—</td>
+          <td style="font-size:11px;color:var(--text3)">${today.split('-').reverse().join('/')}</td>
         </tr>`;
       }).join('');
     }
