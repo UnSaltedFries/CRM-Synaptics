@@ -3603,6 +3603,7 @@
       renderPipeline(); 
       renderConv(); 
       renderTable(); 
+      renderProspectsTable();
       renderTeamStats(); 
       renderKanban(); 
       renderSparkline();
@@ -3891,6 +3892,7 @@
 
       const display = rows.slice(0, 10);
       const body = document.getElementById('tableBody');
+      if (!body) return;
       body.innerHTML = display.map(p => {
         const [bg, fg] = (p.av || '#E6F1FB:#185FA5').split(':');
         const sc = p.score > 70 ? '#639922' : p.score > 40 ? '#BA7517' : '#E24B4A';
