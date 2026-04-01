@@ -4213,13 +4213,6 @@
       <button class="btn-action" onclick="bulkProChangeStatus()" style="padding:4px 12px;font-size:11px" title="Changer statut">Statut</button>
     </div>
 
-    <div style="display:flex;align-items:center;gap:6px">
-      <select id="bulkProResp" class="badge-select" style="background:var(--surface2);color:var(--text);border:0.5px solid var(--border2);height:32px;padding:0 8px;border-radius:8px;font-size:12px">
-        ${teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
-      </select>
-      <button class="btn-action" onclick="bulkProAssign()" style="padding:4px 12px;font-size:11px" title="Assigner">Propriétaire</button>
-    </div>
-
     <button class="btn-action" onclick="bulkProDelete()" style="background:rgba(224,60,60,0.1);color:#ff5f5f;border:0.5px solid rgba(224,60,60,0.2);padding:6px 14px;font-size:11px;margin-left:auto" title="Supprimer">Supprimer</button>
     <button class="bulk-close" onclick="toggleAllProChecks(false)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;padding:0 10px">&times;</button>
   </div>`;
