@@ -2344,16 +2344,16 @@
 
     #proBulkBar {
       position: fixed;
-      bottom: -120px;
+      top: -120px;
       left: 50%;
       transform: translateX(-50%);
-      transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       z-index: 4000;
       opacity: 0;
       pointer-events: none;
     }
     #proBulkBar.active {
-      bottom: 32px;
+      top: 84px;
       opacity: 1;
       pointer-events: auto;
     }
@@ -2784,7 +2784,7 @@
                   <button class="btn-add" onclick="openModal()">+ Ajouter</button>
                 </div>
               </div>
-              <!-- proBulkBar moved to end of body -->
+              <div id="proBulkBar"></div>
               <div style="overflow-x:auto">
                 <table>
                   <thead>
@@ -3189,7 +3189,6 @@
 ══════════════════════════════════════ -->
   <div class="toast-container" id="toastContainer"></div>
   <div id="synaptic-tooltip"></div>
-  <div id="proBulkBar"></div>
 
   <script>  // ─── NOTE MODAL LOGIC ───
     let currentNoteProspectId = null;
