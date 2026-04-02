@@ -2663,7 +2663,7 @@
                 </div>
                 <div class="table-controls">
                   <input class="tbl-search" type="text" placeholder="Rechercher..." id="searchQ"
-                    oninput="renderTable()" />
+                    oninput="debouncedRenderTable()" />
                   <select class="tbl-filter" id="filterResp" onchange="renderTable()">
                     <option value="">Tous les commerciaux</option>
                     <option value="Grégory">Grégory</option>
@@ -2721,7 +2721,7 @@
                 <div class="table-controls">
                   <select class="tbl-filter" id="proPersonSelect" onchange="setProResp(this.value)" style="width:140px"></select>
                   <input class="tbl-search" type="text" placeholder="Rechercher..." id="proSearchQ"
-                    oninput="renderProspectsTable()" />
+                    oninput="debouncedRenderProspectsTable()" />
                   <select class="tbl-filter" id="proFilterDate" onchange="renderProspectsTable()">
                     <option value="">Toutes les dates</option>
                     <option value="today">Aujourd'hui</option>
@@ -2832,7 +2832,7 @@
           </div>
 
           <!-- BULK ACTION BAR (BOTTOM OVERLAY) -->
-          <div id="proBulkBar"></div>
+
         </div><!-- /page-prospects -->
 
           <!-- ══ PAGE: EXEMPLES ══ -->
@@ -3190,7 +3190,21 @@
   <div class="toast-container" id="toastContainer"></div>
   <div id="synaptic-tooltip"></div>
 
-  <script>  // ─── NOTE MODAL LOGIC ───
+  <script>  // ─── UTILS ───
+    function debounce(fn, delay) {
+      let timeout = null;
+      return function() {
+        const args = arguments;
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn.apply(context, args), delay);
+      };
+    }
+
+    const debouncedRenderTable = debounce(() => renderTable(), 250);
+    const debouncedRenderProspectsTable = debounce(() => renderProspectsTable(), 250);
+
+    // ─── NOTE MODAL LOGIC ───
     let currentNoteProspectId = null;
 
     function openNoteModal(id) {
@@ -3418,7 +3432,7 @@
     var prospects = [];
     var dbReady = false;
 
-    // ─── SAVE TO FIRESTORE + LOCALSTORAGE ───
+    // ─── SAVE TO FIRESTORE (Individual Documents) ───
     var saveTimeout = null;
     function saveData() {
       // Save to localStorage immediately
@@ -3426,43 +3440,65 @@
         localStorage.setItem('synaptic_prospects', JSON.stringify(prospects));
         localStorage.setItem('synaptic_team', JSON.stringify(teamMembers));
       } catch (e) { }
+
       // Debounce Firestore writes
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(function () {
-        db.collection('config').doc('prospects').set({ data: prospects })
-          .catch(function (e) { console.warn('Firebase save error:', e); });
+        // Save Team (still single doc as it's small)
         db.collection('config').doc('team').set({ data: teamMembers })
-          .catch(function (e) { console.warn('Firebase save error:', e); });
-      }, 500);
+          .catch(function (e) { console.warn('Firebase team save error:', e); });
+
+        // Save Prospects (individual docs)
+        // Note: For performance, ideally only changed docs should be saved.
+        // For now, we save everything to ensure data integrity during migration.
+        prospects.forEach(p => {
+          if (!p.id) p.id = 'p' + Date.now() + Math.random().toString(36).substr(2, 5);
+          db.collection('prospects').doc(p.id).set(p)
+            .catch(e => console.warn('Error saving prospect:', p.id, e));
+        });
+      }, 1000); // 1s debounce for Firestore
     }
 
     // ─── LOAD FROM FIRESTORE ───
     function loadProspects() {
       Promise.all([
-        db.collection('config').doc('prospects').get(),
-        db.collection('config').doc('team').get()
-      ]).then(function (docs) {
-        const pDoc = docs[0], tDoc = docs[1];
-        if (pDoc.exists && pDoc.data().data && pDoc.data().data.length > 0) {
-          prospects = pDoc.data().data;
-        } else {
-          // Try localStorage fallback
+        db.collection('prospects').get(),
+        db.collection('config').doc('team').get(),
+        db.collection('config').doc('prospects').get() // Check old format for migration
+      ]).then(function (results) {
+        const prospSnap = results[0], teamDoc = results[1], oldProspDoc = results[2];
+
+        // 1. Load Team
+        if (teamDoc.exists && teamDoc.data().data) {
+          teamMembers = teamDoc.data().data;
+        }
+
+        // 2. Load Prospects (New format)
+        if (!prospSnap.empty) {
+          const loaded = [];
+          prospSnap.forEach(doc => loaded.push(doc.data()));
+          prospects = loaded;
+        } 
+        // 3. Migration: if new format empty but old exists
+        else if (oldProspDoc.exists && oldProspDoc.data().data) {
+          console.log("Migrating prospects to individual documents...");
+          prospects = oldProspDoc.data().data;
+          // Promptly save to new format
+          prospects.forEach(p => {
+            db.collection('prospects').doc(p.id).set(p);
+          });
+          // Optionally delete old doc? Let's keep it as backup for now.
+        }
+        else {
+          // Fallback to localStorage
           try {
             const saved = localStorage.getItem('synaptic_prospects');
             prospects = saved ? JSON.parse(saved) : getDefaultProspects();
           } catch (e) { prospects = getDefaultProspects(); }
-          // Push defaults to Firestore
-          db.collection('config').doc('prospects').set({ data: prospects });
+          // Initialize Firestore
+          prospects.forEach(p => db.collection('prospects').doc(p.id).set(p));
         }
-        if (tDoc.exists && tDoc.data().data) {
-          teamMembers = tDoc.data().data;
-        } else {
-          try {
-            const savedTeam = localStorage.getItem('synaptic_team');
-            if (savedTeam) teamMembers = JSON.parse(savedTeam);
-          } catch (e) { }
-          db.collection('config').doc('team').set({ data: teamMembers });
-        }
+
         dbReady = true;
         renderAll();
         setTimeout(() => {
@@ -3474,7 +3510,6 @@
         try {
           const saved = localStorage.getItem('synaptic_prospects');
           prospects = saved ? JSON.parse(saved) : getDefaultProspects();
-          const savedTeam = localStorage.getItem('synaptic_team');
         } catch (e2) { prospects = getDefaultProspects(); }
         renderAll();
         setTimeout(() => {
@@ -4756,5 +4791,7 @@
     })();
 
   </script>
+  <div id="proBulkBar"></div>
+  <div id="bulkBar"></div>
 </body>
 </html>
