@@ -2344,16 +2344,16 @@
 
     #proBulkBar {
       position: fixed;
-      top: -120px;
+      bottom: -150px;
       left: 50%;
       transform: translateX(-50%);
-      transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      z-index: 4000;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 9999;
       opacity: 0;
       pointer-events: none;
     }
     #proBulkBar.active {
-      top: 84px;
+      bottom: 30px;
       opacity: 1;
       pointer-events: auto;
     }
@@ -2784,7 +2784,7 @@
                   <button class="btn-add" onclick="openModal()">+ Ajouter</button>
                 </div>
               </div>
-              <div id="proBulkBar"></div>
+
               <div style="overflow-x:auto">
                 <table>
                   <thead>
@@ -3582,7 +3582,7 @@
       </div>`;
     }
 
-    function buildRowHtml(p, today) {
+    function buildRowHtml(p, today, currentSelectedIds = new Set()) {
       const [bg, fg] = (p.av || '#E6F1FB:#185FA5').split(':');
       const sc = p.score > 70 ? '#639922' : p.score > 40 ? '#BA7517' : '#E24B4A';
       
@@ -3604,8 +3604,10 @@
 
       const relanceIndicator = isRelanceUrg ? `<span class="relance-dot relance-late" title="${isUrgentContact ? 'Dernier contact > 7 jours' : 'Relance en retard'}"></span>` : '';
 
+      const isChecked = currentSelectedIds.has(p.id) ? 'checked' : '';
+
       return `<tr data-rid="${p.id}">
-        <td><input type="checkbox" class="pro-row-cb" value="${p.id}" onclick="updateProBulkBar()"/></td>
+        <td><input type="checkbox" class="pro-row-cb" value="${p.id}" ${isChecked} onclick="updateProBulkBar()"/></td>
         <td><div class="prospect-name">
           <div class="av-sm" style="background:${bg};color:${fg}">${p.initiales || '+'}</div>
           <span style="font-weight:600">${p.nom || ''}</span>
@@ -4625,6 +4627,9 @@
     function renderProspectsTable() {
       const body = document.getElementById('proTableBody');
       if (!body) return;
+
+      const currentSelectedIds = new Set(getProSelectedIds());
+
       const q = (document.getElementById('proSearchQ') || {}).value || '';
       const qLow = q.toLowerCase();
       const st = getProSelectedStatuses();
@@ -4661,7 +4666,8 @@
         return;
       }
 
-      body.innerHTML = rows.map(p => buildRowHtml(p, today)).join('');
+      body.innerHTML = rows.map(p => buildRowHtml(p, today, currentSelectedIds)).join('');
+      updateProBulkBar();
     }
 
     function renderExemplesTable() {
