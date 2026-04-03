@@ -2716,13 +2716,6 @@
             </svg>
             <span class="item-label">Résumé des Prospects</span>
           </button>
-          <button id="nav-exemples" class="sidebar-item" onclick="switchPage('exemples', this)" data-tt="Exemples">
-            <svg viewBox="0 0 24 24">
-              <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
-              <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-            </svg>
-            <span class="item-label">Exemples</span>
-          </button>
           <button id="nav-import" class="sidebar-item" onclick="switchPage('import-export', this)" data-tt="Import / Export">
             <svg viewBox="0 0 24 24">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -2824,10 +2817,12 @@
                 <table style="width:100%">
                   <thead>
                     <tr>
-                      <th>Prospect</th>
-                      <th>Statut</th>
-                      <th>Score</th>
-                      <th>Note</th>
+                      <th style="width:25%">Prospect</th>
+                      <th style="width:12%">Statut</th>
+                      <th style="width:18%">Score</th>
+                      <th style="width:15%">Commercial</th>
+                      <th style="width:20%">Note</th>
+                      <th style="width:10%">Valeur</th>
                     </tr>
                   </thead>
                   <tbody id="tableBody"></tbody>
@@ -2982,49 +2977,7 @@
 
         </div><!-- /page-prospects -->
 
-          <!-- ══ PAGE: EXEMPLES ══ -->
-          <div class="page" id="page-exemples">
-            <div class="pipeline-card" style="margin-bottom:20px">
-              <div class="card-header">
-                <div class="card-title" style="display:flex;align-items:center;gap:10px">
-                  <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8">
-                    <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
-                    <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-                  </svg>
-                  Fiches Exemples
-                </div>
-              </div>
-              <p style="color:var(--text2);font-size:13px;margin-bottom:16px">
-                Ces fiches servent de modèles et de démonstration. Elles ne sont pas comptabilisées dans vos KPIs ni votre pipeline.
-              </p>
-              <div id="exempleSummary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px"></div>
-            </div>
-            <div class="table-card">
-              <div class="table-top">
-                <div class="ct">Tableau récapitulatif</div>
-              </div>
-              <div style="overflow-x:auto">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Prospect</th>
-                      <th>Téléphone</th>
-                      <th>Entreprise</th>
-                      <th>Valeur (€)</th>
-                      <th>Score</th>
-                      <th>Responsable</th>
-                      <th>Relance</th>
-                      <th>Date de création</th>
-                    </tr>
-                  </thead>
-                  <tbody id="exempleTableBody"></tbody>
-                </table>
-              </div>
-              <div class="tbl-footer">
-                <span class="tbl-count" id="exempleTblCount"></span>
-              </div>
-            </div>
-          </div><!-- /page-exemples -->
+
 
           <!-- ══ PAGE: IMPORT / EXPORT ══ -->
           <div class="page" id="page-import-export">
@@ -3724,16 +3677,16 @@
         }
 
         // 4. Load Fixes
-        if (!fixesSnap.empty) {
+        try {
+          const savedFixes = localStorage.getItem('synaptic_fixes');
+          if (savedFixes) fixes = JSON.parse(savedFixes);
+        } catch(e) {}
+
+        if (fixesSnap && !fixesSnap.empty) {
           const loadedFixes = [];
           fixesSnap.forEach(doc => loadedFixes.push(doc.data()));
-          fixes = loadedFixes;
-        } else {
-          // Fallback to local storage for fixes
-          try {
-            const savedFixes = localStorage.getItem('synaptic_fixes');
-            fixes = savedFixes ? JSON.parse(savedFixes) : [];
-          } catch(e) { fixes = []; }
+          // Sort or merge? For fixes, Firestore is the priority.
+          if (loadedFixes.length > 0) fixes = loadedFixes;
         }
 
         dbReady = true;
@@ -3814,16 +3767,8 @@
     var currentData = [];
     let selStage = null;
 
-    const EXAMPLE_PROSPECTS = [
-      { id: 'ex1', nom: 'Jean Dupont', email: 'j.dupont@techindustries.fr', telephone: '06 12 34 56 78', entreprise: 'Tech Industries', statut: 'appeler', source: 'LinkedIn', valeur: 12000, score: 85, resp: 'Grégory', date: '2024-03-20', dateRelance: '2024-03-25', note: 'Décisionnaire technique, intéressé par la solution Cloud.', initiales: 'JD', av: '#E6F1FB:#185FA5', created: '2024-03-15' },
-      { id: 'ex2', nom: 'Marie Leroy', email: 'm.leroy@luxe-paris.com', telephone: '01 23 45 67 89', entreprise: 'Luxe Paris', statut: 'rdv_planifie', source: 'Instagram', valeur: 45000, score: 95, resp: 'Édouard', date: '2024-03-21', dateRelance: '2024-03-22', note: 'RDV de démo prévu demain à 14h. Fort potentiel.', initiales: 'ML', av: '#EEEDFE:#534AB7', created: '2024-03-18' },
-      { id: 'ex3', nom: 'Thomas Bernard', email: 't.bernard@btp-plus.fr', telephone: '07 89 45 61 23', entreprise: 'BTP Plus', statut: 'signe', source: 'Recommandation', valeur: 8500, score: 100, resp: 'Maxence', date: '2024-03-19', dateRelance: '', note: 'Contrat signé ce matin. Lancement du projet en avril.', initiales: 'TB', av: '#EAF3DE:#0F6E56', created: '2024-03-10' },
-      { id: 'ex4', nom: 'Sophie Martin', email: 'smartin@green-energy.org', telephone: '06 55 44 33 22', entreprise: 'Green Energy', statut: 'repondu', source: 'Webinaire', valeur: 3200, score: 45, resp: 'Grégory', date: '2024-03-22', dateRelance: '2024-03-29', note: 'Profil à qualifier davantage. Budget restreint pour le moment.', initiales: 'SM', av: '#FAEEDA:#854F0B', created: '2024-03-20' },
-      { id: 'ex5', nom: 'Lucas Petit', email: 'lpetit@startup-now.io', telephone: '06 11 22 33 44', entreprise: 'Startup Now', statut: 'perdu', source: 'Autre', valeur: 1500, score: 20, resp: 'Édouard', date: '2024-03-15', dateRelance: '', note: 'Projet abandonné en interne par le client.', initiales: 'LP', av: '#FCEBEB:#A32D2D', created: '2024-03-12' }
-    ];
-
     function getDefaultProspects() {
-      return [...EXAMPLE_PROSPECTS];
+      return [];
     }
 
     function computePipelineData() {
@@ -3882,6 +3827,11 @@
           <td><div class="score-wrap"><div class="score-track"><div class="score-fill" style="width:${p.score || 0}%;background:${sc}"></div></div><span style="font-size:11px;color:var(--text2);margin-left:8px">${p.score || 0}%</span></div></td>
           <td>${respSelectHtml(p)}</td>
           <td><div class="note-cell" title="${(p.note || 'Pas de note').replace(/"/g, '&quot;')}" onclick="openNoteModal('${p.id}')"><svg class="note-icon"><use href="#icon-edit"/></svg><span>${notePreview}</span></div></td>
+          <td style="font-weight:700; color:var(--text)">
+            <input type="text" class="ghost-input" value="${(p.valeur || 0)}" 
+              onchange="updateInline('${p.id}', 'valeur', this.value)" 
+              style="width:60px; font-weight:700; text-align:right" />€
+          </td>
         </tr>`;
       }
 
@@ -3934,7 +3884,7 @@
       const badge = badgeCss[s] || badgeCss.appeler;
       return `<div class="status-cell">
         <select class="badge-select" style="${badge}" onchange="changeStatus('${p.id}', this.value)">
-          ${Object.entries(statusMap).filter(([k]) => k !== 'exemple').map(([k, v]) => 
+          ${Object.entries(statusMap).map(([k, v]) => 
             `<option value="${k}" ${k === s ? 'selected' : ''}>${v}</option>`).join('')}
         </select>
       </div>`;
@@ -4020,7 +3970,7 @@
     // ─── KPI ───
     function renderKPI() {
       const today = new Date().toISOString().split('T')[0];
-      const actifs = prospects.filter(p => p.statut !== 'signe' && p.statut !== 'perdu');
+      const actifs = prospects.filter(p => p.statut !== 'signe' && p.statut !== 'perdu' && p.statut !== 'npai');
       const valeurPipeline = actifs.reduce((s, p) => s + (Number(p.valeur) || 0), 0);
       const convGlobal = prospects.length > 0 ? Math.round(prospects.filter(p => p.statut === 'signe').length / prospects.length * 100) : 0;
       const callsToday = prospects.reduce((s, p) => s + (p.appels || []).filter(a => a.date === today).length, 0);
@@ -4262,7 +4212,7 @@
     }
 
     // ─── TABLE ───
-    const statusMap = { appeler: 'À appeler', appele: 'Appelé', repondu: 'Répondu', rdv_planifie: 'RDV planifié', rdv_effectue: 'RDV effectué', signe: 'Signé', perdu: 'Perdu', npai: 'Faux N°/NPAI', exemple: 'Exemple' };
+    const statusMap = { appeler: 'À appeler', appele: 'Appelé', repondu: 'Répondu', rdv_planifie: 'RDV planifié', rdv_effectue: 'RDV effectué', signe: 'Signé', perdu: 'Perdu', npai: 'Faux N°/NPAI' };
     const badgeCss = {
       appeler: `background:#E6F1FB;color:#185FA5`,
       appele: `background:#EEEDFE;color:#534AB7`,
@@ -4272,7 +4222,7 @@
       signe: `background:#D4EDDA;color:#27500A`,
       perdu: `background:#FCEBEB;color:#A32D2D`,
       npai: `background:#E6E6E6;color:#5A5A5A;text-decoration:line-through;`,
-      exemple: `background:#F0F0F5;color:#6B7280;border:0.5px dashed #D1D5DB`
+
     };
 
     let showOnlyToday = false;
@@ -4291,7 +4241,6 @@
 
       const hotStatuts = ['rdv_planifie', 'rdv_effectue', 'signe'];
       let rows = prospects.filter(p => {
-        if (p.statut === 'exemple') return false;
         const isHot = hotStatuts.includes(p.statut);
         const isVeryHighScore = (p.score || 0) >= 80;
         if (!isHot && !isVeryHighScore) return false;
@@ -4358,11 +4307,7 @@
       if (!p) return;
       const v = Math.min(100, Math.max(0, Number(value) || 0));
       p.score = v;
-      const bar = el.parentElement.parentElement.querySelector('.score-fill');
-      if (bar) {
-        bar.style.width = v + '%';
-        bar.style.background = v > 70 ? '#639922' : v > 40 ? '#BA7517' : '#E24B4A';
-      }
+      renderAll();
       saveData();
     }
 
@@ -4675,7 +4620,7 @@
       document.documentElement.classList.remove('sidebar-open');
     }
 
-    const pageNames = { dashboard: 'Dashboard', prospects: 'Résumé des Prospects', kanban: 'Pipeline Kanban', fixe: 'Fixes & Améliorations', exemples: 'Exemples', 'import-export': 'Import / Export', parametres: 'Paramètres' };
+    const pageNames = { dashboard: 'Dashboard', prospects: 'Résumé des Prospects', kanban: 'Pipeline Kanban', fixe: 'Fixes & Améliorations', 'import-export': 'Import / Export', parametres: 'Paramètres' };
     function switchPage(id, btn) {
       if (!btn) btn = document.getElementById('nav-' + id);
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -4697,7 +4642,7 @@
         renderProPersonBtns();
         renderProspectsTable();
       }
-      if (id === 'exemples') renderExemplesTable();
+
     }
 
     // ─── FIX BOARD LOGIC ───
@@ -4891,7 +4836,6 @@
       
       // Export filtered prospects if on full list page, otherwise all
       let toExport = prospects.filter(p => {
-        if (p.statut === 'exemple') return false;
         if (st.length > 0 && !st.includes(p.statut)) return false;
         if (qLow && !p.nom.toLowerCase().includes(qLow) && !p.entreprise.toLowerCase().includes(qLow)) return false;
         return true;
@@ -5042,7 +4986,6 @@
       const today = new Date().toISOString().split('T')[0];
 
       let rows = prospects.filter(p => {
-        if (p.statut === 'exemple') return false;
         if (st.length > 0 && !st.includes(p.statut)) return false;
         if (proFilterResp && p.resp !== proFilterResp) return false;
         if (qLow && !p.nom.toLowerCase().includes(qLow) && !p.entreprise.toLowerCase().includes(qLow)) return false;
@@ -5076,33 +5019,7 @@
       updateProBulkBar();
     }
 
-    function renderExemplesTable() {
-      const body = document.getElementById('exempleTableBody');
-      if (!body) return;
-      const today = new Date().toISOString().split('T')[0];
-      body.innerHTML = EXAMPLE_PROSPECTS.map(p => {
-        const { initiales, av } = avatarFromName(p.nom);
-        const [bg, fg] = av.split(':');
-        const sc = p.score > 70 ? '#639922' : p.score > 40 ? '#BA7517' : '#E24B4A';
-        const valStr = (Number(p.valeur) || 0).toLocaleString('fr-FR') + '€';
-        
-        return `<tr>
-          <td><div class="prospect-name"><div class="av-sm" style="background:${bg};color:${fg}">${initiales}</div><span>${p.nom}</span></div></td>
-          <td style="font-family:monospace;color:var(--blue)">${p.telephone || '—'}</td>
-          <td style="color:var(--text2)">${p.entreprise || '—'}</td>
-          <td style="font-weight:600">${valStr}</td>
-          <td>
-             <div class="score-wrap">
-               <div class="score-track"><div class="score-fill" style="width:${p.score || 0}%;background:${sc}"></div></div>
-               <span style="font-size:11px;color:var(--text2);margin-left:8px">${p.score || 0}%</span>
-             </div>
-          </td>
-          <td>${p.resp || '—'}</td>
-          <td style="font-size:11px;color:var(--text3)">—</td>
-          <td style="font-size:11px;color:var(--text3)">${today.split('-').reverse().join('/')}</td>
-        </tr>`;
-      }).join('');
-    }
+
 
     (function initTooltips() {
       const tt = document.getElementById('synaptic-tooltip');
