@@ -681,6 +681,39 @@
       transform: translateY(-1px);
     }
 
+    .kanban-col-todo {
+      border-top: 4px solid #E24B4A !important;
+    }
+
+    .kanban-col-todo .kanban-col-header span:first-child {
+      color: #E24B4A;
+    }
+
+    .kanban-col-done {
+      border-top: 4px solid #639922 !important;
+    }
+
+    .kanban-col-done .kanban-col-header span:first-child {
+      color: #639922;
+    }
+
+    .fix-card {
+      background: var(--surface);
+      padding: 12px;
+      border-radius: 12px;
+      border: 0.5px solid var(--border2);
+      font-size: 13px;
+      line-height: 1.5;
+      cursor: grab;
+      position: relative;
+    }
+
+    .fix-card-date {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 8px;
+    }
+
     .kanban-card.dragging {
       opacity: 0.5;
       transform: rotate(2deg);
@@ -1689,6 +1722,63 @@
       }
     }
 
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .modal-sub {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .modal-close {
+      background: var(--surface2);
+      border: 0.5px solid var(--border2);
+      color: var(--text2);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--surface);
+      color: var(--text);
+      transform: scale(1.1);
+    }
+
+    .btn-danger {
+      background: rgba(226, 75, 74, 0.1);
+      color: var(--red);
+      border: 1px solid rgba(226, 75, 74, 0.2);
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-danger:hover {
+      background: var(--red);
+      color: white;
+    }
+
     /* ── CONFIRM DELETE POPUP ── */
     .confirm-bg {
       display: none;
@@ -2641,6 +2731,12 @@
             </svg>
             <span class="item-label">Import / Export</span>
           </button>
+          <button id="nav-fixe" class="sidebar-item" onclick="switchPage('fixe', this)" data-tt="Fixes & Améliorations">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.77 3.77z"/>
+            </svg>
+            <span class="item-label">Fixe</span>
+          </button>
           <button id="nav-settings" class="sidebar-item" onclick="switchPage('parametres', this)" data-tt="Paramètres">
             <svg viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="3" />
@@ -2848,6 +2944,8 @@
                           id="pro-sort-email"></span></th>
                       <th class="sortable" onclick="sortProTable('entreprise')">Entreprise <span class="sort-icon"
                           id="pro-sort-entreprise"></span></th>
+                      <th class="sortable" onclick="sortProTable('typeEntreprise')">Type d'entreprise <span class="sort-icon"
+                          id="pro-sort-typeEntreprise"></span></th>
                       <th>Statut</th>
                       <th class="sortable" onclick="sortProTable('valeur')">Valeur (€) <span class="sort-icon"
                           id="pro-sort-valeur"></span></th>
@@ -2982,9 +3080,9 @@
                     <div
                       style="font-size:12px;font-family:monospace;background:var(--bg);padding:14px 16px;border-radius:8px;overflow-x:auto;line-height:1.8;border:1px solid var(--border)">
                       <div style="color:var(--blue);font-weight:700;font-size:13px">
-                        nom;entreprise;statut;source;valeur;score;resp;date;note</div>
+                        nom;entreprise;typeEntreprise;statut;source;valeur;score;resp;date;note</div>
                       <div style="color:var(--text)">Marie Durand;Acme
-                        Corp;new;LinkedIn;5000;50;Grégory;2026-03-28;Premier contact</div>
+                        Corp;PME;new;LinkedIn;5000;50;Grégory;2026-03-28;Premier contact</div>
                       <div style="color:var(--text)">Paul
                         Martin;TechSoft;contact;Salon;12000;72;Édouard;2026-03-27;Relance prévue</div>
                     </div>
@@ -3024,6 +3122,8 @@
             </div>
           </div><!-- /page-import-export -->
 
+
+
           <!-- ══ PAGE: PARAMÈTRES ══ -->
           <div class="page" id="page-parametres">
             <div class="pipeline-card">
@@ -3042,7 +3142,7 @@
                 <div class="bcard">
                   <div class="bcard-title">Données locales</div>
                   <p style="color:var(--text2);font-size:12px;margin-bottom:12px">Les prospects sont actuellement
-                    stockés dans la mémoire du navigateur.</p>
+                    stockés dans la mémoire du navigateur et Firestore.</p>
                   
                   <div style="margin-bottom: 20px; padding: 15px; background: var(--surface2); border-radius: 12px;">
                     <label style="display:block; font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; margin-bottom:8px">Votre Nom (Greeting)</label>
@@ -3054,8 +3154,8 @@
 
                   <div style="display:flex;gap:8px">
                     <button class="btn-add" style="background:var(--red)"
-                      onclick="if(confirm('Réinitialiser toutes les données ? Cette action est irréversible.')) { prospects=getDefaultProspects(); renderAll(); saveData(); }">Réinitialiser
-                      les données</button>
+                      onclick="if(confirm('Réinitialiser toutes les données ? Cette action est irréversible.')) { localStorage.clear(); location.reload(); }">Réinitialiser
+                      toutes les données</button>
                   </div>
                 </div>
               </div>
@@ -3063,8 +3163,26 @@
             </div>
           </div><!-- /page-parametres -->
 
-        </div>
-      </div>
+          <!-- ══════════════════════════════════════
+             PAGE: FIXE
+          ══════════════════════════════════════ -->
+          <div id="page-fixe" class="page">
+            <div class="pipeline-card">
+              <div class="card-header">
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
+                  <div class="card-title">Journal des Fixes & Améliorations</div>
+                  <button class="btn-save" onclick="openFixModal()" style="padding:10px 20px">
+                    Ajouter une note
+                  </button>
+                </div>
+              </div>
+              <div style="padding:20px">
+                <div class="kanban-board" id="fixBoard">
+                  <!-- Les colonnes À fixer / Fixé seront insérées ici -->
+                </div>
+              </div>
+            </div>
+          </div>
 
       <!-- ══════════════════════════════════════
      MODAL — Ajouter / Modifier prospect
@@ -3094,9 +3212,36 @@
     </div>
   </div>
 
+  <!-- ── MODAL: ADD FIX ── -->
+  <div class="modal-bg" id="fixModalBg">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Nouveau Fix / Amélioration</div>
+          <div class="modal-sub">Décrivez le bug ou l'idée d'amélioration.</div>
+        </div>
+        <button class="modal-close" onclick="closeFixModal()">×</button>
+      </div>
+      <div class="mfield">
+        <label>Description</label>
+        <textarea id="fText" placeholder="Ex: Le bouton X ne fonctionne pas sur mobile..." style="height:120px"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeFixModal()">Annuler</button>
+        <button class="btn-save" onclick="saveFixItem()">Ajouter au journal</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-bg" id="modalBg">
     <div class="modal">
-      <h3 id="modalTitle">Nouveau prospect</h3>
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="modalTitle">Nouveau prospect</div>
+          <div class="modal-sub">Renseignez les détails du prospect ci-dessous.</div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
       <div class="modal-grid">
         <div class="mfield">
           <label>Prénom Nom</label>
@@ -3106,9 +3251,13 @@
           <label>Téléphone</label>
           <input type="tel" id="mTelephone" placeholder="06 12 34 56 78" />
         </div>
-        <div class="mfield">
+         <div class="mfield">
           <label>Entreprise</label>
           <input type="text" id="mEntreprise" placeholder="Acme Corp" />
+        </div>
+        <div class="mfield">
+          <label>Type d'entreprise</label>
+          <input type="text" id="mTypeEntreprise" placeholder="PME, ETI, etc." />
         </div>
         <div class="mfield">
           <label>Statut</label>
@@ -3167,6 +3316,7 @@
         <textarea id="mNote" placeholder="Commentaire libre..."></textarea>
       </div>
       <div class="modal-actions">
+        <button class="btn-danger" id="btnDelProspect" style="margin-right:auto; display:none" onclick="deleteProspect(modalProspectId)">Supprimer</button>
         <button class="btn-cancel" onclick="closeModal()">Annuler</button>
         <button class="btn-save" onclick="saveProspect()">Enregistrer</button>
       </div>
@@ -3494,6 +3644,7 @@
     });
 
     var prospects = [];
+    var fixes = [];
     var dbReady = false;
 
     // ─── SAVE TO FIRESTORE (Individual Documents) ───
@@ -3502,6 +3653,7 @@
       // Save to localStorage immediately
       try {
         localStorage.setItem('synaptic_prospects', JSON.stringify(prospects));
+        localStorage.setItem('synaptic_fixes', JSON.stringify(fixes));
         localStorage.setItem('synaptic_team', JSON.stringify(teamMembers));
       } catch (e) { }
 
@@ -3520,6 +3672,13 @@
           db.collection('prospects').doc(p.id).set(p)
             .catch(e => console.warn('Error saving prospect:', p.id, e));
         });
+
+        // Save Fixes (individual docs)
+        fixes.forEach(f => {
+          if (!f.id) f.id = 'f' + Date.now() + Math.random().toString(36).substr(2, 5);
+          db.collection('fixes').doc(f.id).set(f)
+            .catch(e => console.warn('Error saving fix:', f.id, e));
+        });
       }, 1000); // 1s debounce for Firestore
     }
 
@@ -3528,9 +3687,10 @@
       Promise.all([
         db.collection('prospects').get(),
         db.collection('config').doc('team').get(),
-        db.collection('config').doc('prospects').get() // Check old format for migration
+        db.collection('config').doc('prospects').get(), // Check old format for migration
+        db.collection('fixes').get()
       ]).then(function (results) {
-        const prospSnap = results[0], teamDoc = results[1], oldProspDoc = results[2];
+        const prospSnap = results[0], teamDoc = results[1], oldProspDoc = results[2], fixesSnap = results[3];
 
         // 1. Load Team
         if (teamDoc.exists && teamDoc.data().data) {
@@ -3561,6 +3721,19 @@
           } catch (e) { prospects = getDefaultProspects(); }
           // Initialize Firestore
           prospects.forEach(p => db.collection('prospects').doc(p.id).set(p));
+        }
+
+        // 4. Load Fixes
+        if (!fixesSnap.empty) {
+          const loadedFixes = [];
+          fixesSnap.forEach(doc => loadedFixes.push(doc.data()));
+          fixes = loadedFixes;
+        } else {
+          // Fallback to local storage for fixes
+          try {
+            const savedFixes = localStorage.getItem('synaptic_fixes');
+            fixes = savedFixes ? JSON.parse(savedFixes) : [];
+          } catch(e) { fixes = []; }
         }
 
         dbReady = true;
@@ -3695,8 +3868,8 @@
       const sc = p.score > 70 ? '#639922' : p.score > 40 ? '#BA7517' : '#E24B4A';
       const today = new Date().toISOString().split('T')[0];
       
-      const createdStr = p.date ? new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—';
-      const relanceStr = p.dateRelance ? new Date(p.dateRelance).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : '—';
+      const createdStr = p.date ? new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+      const relanceStr = p.dateRelance ? new Date(p.dateRelance).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
       const isRelanceUrg = p.dateRelance && p.dateRelance <= today && p.statut !== 'signe' && p.statut !== 'perdu';
       const relanceClass = isRelanceUrg ? 'relance-urg' : '';
       const relanceIndicator = isRelanceUrg ? '<span class="status-indicator"></span>' : '';
@@ -3718,6 +3891,7 @@
         <td style="font-size:12px;color:var(--text2)">${p.telephone || '—'}</td>
         <td style="font-size:12px;color:var(--text2)">${p.email || '—'}</td>
         <td style="font-size:12px;color:var(--text2)">${p.entreprise || '—'}</td>
+        <td style="font-size:12px;color:var(--text2)">${p.typeEntreprise || '—'}</td>
         <td>${statusSelectHtml(p)}</td>
         <td style="font-weight:600">${(Number(p.valeur) || 0).toLocaleString('fr-FR')}€</td>
         <td><div class="score-wrap"><div class="score-track"><div class="score-fill" style="width:${p.score || 0}%;background:${sc}"></div></div><span style="font-size:11px;margin-left:5px">${p.score || 0}%</span></div></td>
@@ -4202,14 +4376,17 @@
     function openModal(id = null) {
       modalProspectId = id;
       const title = document.getElementById('modalTitle');
+      const btnDel = document.getElementById('btnDelProspect');
       if (id) {
         title.textContent = 'Modifier le prospect';
+        if (btnDel) btnDel.style.display = 'block';
         const p = prospects.find(x => x.id === id);
         if (p) {
           document.getElementById('mNom').value = p.nom || '';
           document.getElementById('mTelephone').value = p.telephone || '';
           document.getElementById('mEmail').value = p.email || '';
           document.getElementById('mEntreprise').value = p.entreprise || '';
+          document.getElementById('mTypeEntreprise').value = p.typeEntreprise || '';
           document.getElementById('mStatut').value = p.statut || 'appeler';
           document.getElementById('mSource').value = p.source || 'LinkedIn';
           document.getElementById('mValeur').value = p.valeur || 0;
@@ -4221,10 +4398,12 @@
         }
       } else {
         title.textContent = 'Nouveau prospect';
+        if (btnDel) btnDel.style.display = 'none';
         document.getElementById('mNom').value = '';
         document.getElementById('mTelephone').value = '';
         document.getElementById('mEmail').value = '';
         document.getElementById('mEntreprise').value = '';
+        document.getElementById('mTypeEntreprise').value = '';
         document.getElementById('mStatut').value = 'appeler';
         document.getElementById('mSource').value = 'LinkedIn';
         document.getElementById('mValeur').value = '';
@@ -4266,7 +4445,7 @@
       const today = new Date().toISOString().split('T')[0];
       const newP = {
         id: newId, nom: '', initiales: '+', av: '#E6F1FB:#185FA5',
-        telephone: '', email: '', entreprise: '', statut: 'appeler', source: 'Saisie Rapide',
+        telephone: '', email: '', entreprise: '', typeEntreprise: '', statut: 'appeler', source: 'Saisie Rapide',
         valeur: 0, score: 0, resp: proFilterResp || teamMembers[0]?.name || 'Grégory', date: today, dateRelance: today, note: '', appels: []
       };
       prospects.unshift(newP);
@@ -4286,6 +4465,7 @@
         telephone: document.getElementById('mTelephone').value.trim(),
         email: document.getElementById('mEmail').value.trim(),
         entreprise: document.getElementById('mEntreprise').value.trim(),
+        typeEntreprise: document.getElementById('mTypeEntreprise').value.trim(),
         statut: document.getElementById('mStatut').value,
         source: document.getElementById('mSource').value,
         valeur: Number(document.getElementById('mValeur').value) || 0,
@@ -4308,10 +4488,27 @@
     }
 
     function deleteProspect(id) {
-      if (!confirm('Supprimer ce prospect ?')) return;
-      prospects = prospects.filter(p => p.id !== id);
-      renderAll();
+      const p = prospects.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('confirmMsg').textContent = `Êtes-vous sûr de vouloir supprimer le prospect "${p.nom}" ? Cette action est irréversible.`;
+      const btn = document.getElementById('confirmDelBtn');
+      btn.onclick = function() {
+        prospects = prospects.filter(x => x.id !== id);
+        // Exécution de la suppression Firestore
+        db.collection('prospects').doc(id).delete()
+          .catch(e => console.warn('Erreur lors de la suppression Firestore:', e));
+        
+        renderAll();
+        saveData();
+        closeConfirm();
+        closeModal();
+        showToast('Prospect supprimé avec succès');
+      };
+      toggleModal('confirmBg', true);
     }
+
+    function closeConfirm() { toggleModal('confirmBg', false); }
+    document.getElementById('confirmBg').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfirm(); });
 
     // ─── CALL HISTORY ───
     var callProspectId = null;
@@ -4437,9 +4634,24 @@
     }
     function bulkDelete(isPro) {
       const ids = getSelectedIds(isPro);
-      if (!confirm(`Supprimer ${ids.length} prospect(s) ?`)) return;
-      prospects = prospects.filter(p => !ids.includes(p.id));
-      renderAll();
+      if (ids.length === 0) return;
+      document.getElementById('confirmMsg').textContent = `Êtes-vous sûr de vouloir supprimer ${ids.length} prospect(s) ? Cette action est irréversible.`;
+      const btn = document.getElementById('confirmDelBtn');
+      btn.onclick = function() {
+        prospects = prospects.filter(p => !ids.includes(p.id));
+        
+        // Suppression groupée dans Firestore
+        ids.forEach(id => {
+          db.collection('prospects').doc(id).delete()
+            .catch(e => console.warn('Erreur suppression Firestore bulk:', id, e));
+        });
+
+        renderAll();
+        saveData();
+        closeConfirm();
+        showToast(`${ids.length} prospect(s) supprimé(s)`);
+      };
+      toggleModal('confirmBg', true);
     }
 
     // Adapt legacy calls
@@ -4463,12 +4675,14 @@
       document.documentElement.classList.remove('sidebar-open');
     }
 
-    const pageNames = { dashboard: 'Dashboard', prospects: 'Résumé des Prospects', exemples: 'Exemples', 'import-export': 'Import / Export', parametres: 'Paramètres' };
+    const pageNames = { dashboard: 'Dashboard', prospects: 'Résumé des Prospects', kanban: 'Pipeline Kanban', fixe: 'Fixes & Améliorations', exemples: 'Exemples', 'import-export': 'Import / Export', parametres: 'Paramètres' };
     function switchPage(id, btn) {
+      if (!btn) btn = document.getElementById('nav-' + id);
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.getElementById('page-' + id).classList.add('active');
+      const targetPage = document.getElementById('page-' + id);
+      if (targetPage) targetPage.classList.add('active');
       document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      if (btn) btn.classList.add('active');
       document.getElementById('pageBadge').textContent = pageNames[id] || id;
       closeSidebar();
       
@@ -4477,6 +4691,7 @@
         renderAll();
       }
       if (id === 'kanban') renderKanban();
+      if (id === 'fixe') renderFixBoard();
       if (id === 'parametres') renderSettingsTeam();
       if (id === 'prospects') {
         renderProPersonBtns();
@@ -4484,6 +4699,89 @@
       }
       if (id === 'exemples') renderExemplesTable();
     }
+
+    // ─── FIX BOARD LOGIC ───
+    function renderFixBoard() {
+      const board = document.getElementById('fixBoard');
+      if (!board) return;
+
+      const cols = [
+        { key: 'todo', label: 'À fixer', cls: 'kanban-col-todo' },
+        { key: 'done', label: 'Fixé', cls: 'kanban-col-done' }
+      ];
+
+      board.innerHTML = cols.map(col => {
+        const items = fixes.filter(f => f.status === col.key);
+        return `
+          <div class="kanban-col ${col.cls}" ondragover="allowFixDrop(event)" ondrop="dropFix(event, '${col.key}')">
+            <div class="kanban-col-header">
+              <span>${col.label}</span>
+              <span class="kanban-col-count">${items.length}</span>
+            </div>
+            <div class="kanban-cards">
+              ${items.sort((a, b) => b.createdAt - a.createdAt).map(f => `
+                <div class="fix-card" draggable="true" ondragstart="dragFix(event, '${f.id}')">
+                  <div style="font-weight:500; color:var(--text)">${f.text}</div>
+                  <div class="fix-card-date">${new Date(f.createdAt).toLocaleDateString('fr-FR')}</div>
+                  <button onclick="deleteFixItem('${f.id}')" style="position:absolute; top:8px; right:8px; background:none; border:none; color:var(--text3); cursor:pointer; font-size:14px">×</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openFixModal() { toggleModal('fixModalBg', true); document.getElementById('fText').focus(); }
+    function closeFixModal() { toggleModal('fixModalBg', false); document.getElementById('fText').value = ''; }
+
+    function saveFixItem() {
+      const text = document.getElementById('fText').value.trim();
+      if (!text) return;
+      const newItem = {
+        id: 'f' + Date.now(),
+        text: text,
+        status: 'todo',
+        createdAt: Date.now()
+      };
+      fixes.unshift(newItem);
+      renderFixBoard();
+      saveData();
+      closeFixModal();
+      showToast('Note ajoutée au journal');
+    }
+
+    function deleteFixItem(id) {
+      if (!confirm('Supprimer cette note ?')) return;
+      fixes = fixes.filter(f => f.id !== id);
+      db.collection('fixes').doc(id).delete().catch(e => console.warn('Err delete fix:', e));
+      renderFixBoard();
+      saveData();
+      showToast('Note supprimée');
+    }
+
+    function dragFix(ev, id) {
+      ev.dataTransfer.setData("fixId", id);
+    }
+    function allowFixDrop(ev) {
+      ev.preventDefault();
+      const col = ev.target.closest('.kanban-col');
+      if (col) col.classList.add('drag-over');
+    }
+    function dropFix(ev, newStatus) {
+      ev.preventDefault();
+      const col = ev.target.closest('.kanban-col');
+      if (col) col.classList.remove('drag-over');
+      
+      const id = ev.dataTransfer.getData("fixId");
+      const f = fixes.find(x => x.id === id);
+      if (f && f.status !== newStatus) {
+        f.status = newStatus;
+        renderFixBoard();
+        saveData();
+      }
+    }
+
 
     var teamMembers = [
       { name: 'Grégory', bg: '#B5D4F4', fg: '#0C447C' },
@@ -4584,7 +4882,7 @@
 
     // ─── IMPORT / EXPORT ───
     function exportCSV() {
-      const headers = ['id', 'nom', 'email', 'telephone', 'entreprise', 'statut', 'source', 'valeur', 'score', 'resp', 'date', 'dateRelance', 'note'];
+      const headers = ['id', 'nom', 'email', 'telephone', 'entreprise', 'typeEntreprise', 'statut', 'source', 'valeur', 'score', 'resp', 'date', 'dateRelance', 'note'];
       const csvLines = [headers.join(';')];
       
       const q = (document.getElementById('proSearchQ') || {}).value || '';
@@ -4770,7 +5068,7 @@
 
       if (rows.length === 0 && proFilterType !== 'all') {
         const msg = proFilterType === 'prioritaires' ? 'Aucun prospect prioritaire trouvé.' : 'Rien de prévu pour aujourd\'hui.';
-        body.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text3)">${msg}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:40px;color:var(--text3)">${msg}</td></tr>`;
         return;
       }
 
