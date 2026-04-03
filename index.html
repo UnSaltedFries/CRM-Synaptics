@@ -3393,11 +3393,12 @@
       const currentHour = new Date().getHours();
       const greeting = currentHour < 18 ? 'Bonjour' : 'Bonsoir';
       
-      const tousSaufPerdus = prospects.filter(p => p.statut !== 'perdu' && p.statut !== 'npai');
-      const totalActive = prospects.filter(p => !['signe', 'perdu', 'npai'].includes(p.statut)).length;
-      const caGagne = prospects.filter(p => p.statut === 'signe').reduce((s, p) => s + (Number(p.valeur) || 0), 0);
+      const funnelStatuses = ['appeler', 'new', 'appele', 'contact', 'repondu', 'prop', 'rdv_planifie', 'rdv_effectue', 'nego', 'signe', 'gagne'];
+      const tousSaufPerdus = prospects.filter(p => p.statut !== 'perdu' && p.statut !== 'npai' && funnelStatuses.includes(p.statut));
+      const totalActive = tousSaufPerdus.filter(p => !['signe', 'gagne'].includes(p.statut)).length;
+      const caGagne = prospects.filter(p => (p.statut === 'signe' || p.statut === 'gagne')).reduce((s, p) => s + (Number(p.valeur) || 0), 0);
       const potentielTotal = tousSaufPerdus.reduce((s, p) => s + (Number(p.valeur) || 0), 0);
-      const hotCount = prospects.filter(p => (p.score || 0) >= 80 && !['signe', 'perdu', 'npai'].includes(p.statut)).length;
+      const hotCount = prospects.filter(p => (p.score || 0) >= 80 && !['signe', 'perdu', 'npai'].includes(p.statut) && funnelStatuses.includes(p.statut)).length;
 
       const userName = localStorage.getItem('synaptic_user_name') || 'Synaptics';
       el.innerHTML = `
@@ -3646,8 +3647,9 @@
         if (fixesSnap && !fixesSnap.empty) {
           const loadedFixes = [];
           fixesSnap.forEach(doc => loadedFixes.push(doc.data()));
-          // Sort or merge? For fixes, Firestore is the priority.
-          if (loadedFixes.length > 0) fixes = loadedFixes;
+          if (loadedFixes.length > 0) {
+            fixes = loadedFixes.sort((a, b) => b.createdAt - a.createdAt);
+          }
         }
 
         dbReady = true;
@@ -3924,17 +3926,20 @@
       renderProspectsTable();
       renderTeamStats(); 
       renderKanban();
+      renderFixBoard();
       renderSparkline();
       saveData(); 
     }
 
     // ─── KPI ───
     function renderKPI() {
+      const funnelStatuses = ['appeler', 'new', 'appele', 'contact', 'repondu', 'prop', 'rdv_planifie', 'rdv_effectue', 'nego', 'signe', 'gagne'];
       const today = new Date().toISOString().split('T')[0];
-      const actifs = prospects.filter(p => p.statut !== 'signe' && p.statut !== 'perdu' && p.statut !== 'npai');
-      const tousSaufPerdus = prospects.filter(p => p.statut !== 'perdu' && p.statut !== 'npai');
+      const tousSaufPerdus = prospects.filter(p => p.statut !== 'perdu' && p.statut !== 'npai' && funnelStatuses.includes(p.statut));
+      const actifs = tousSaufPerdus.filter(p => !['signe', 'gagne'].includes(p.statut));
+      
       const valeurTotale = tousSaufPerdus.reduce((s, p) => s + (Number(p.valeur) || 0), 0);
-      const valeurGagne = prospects.filter(p => p.statut === 'signe').reduce((s, p) => s + (Number(p.valeur) || 0), 0);
+      const valeurGagne = prospects.filter(p => (p.statut === 'signe' || p.statut === 'gagne')).reduce((s, p) => s + (Number(p.valeur) || 0), 0);
       const convGlobal = prospects.length > 0 ? Math.round(prospects.filter(p => p.statut === 'signe').length / prospects.length * 100) : 0;
       const callsToday = prospects.reduce((s, p) => s + (p.appels || []).filter(a => a.date === today).length, 0);
       // Late relances
@@ -4625,7 +4630,7 @@
               ${items.sort((a, b) => b.createdAt - a.createdAt).map(f => `
                 <div class="fix-card" draggable="true" ondragstart="dragFix(event, '${f.id}')">
                   <div style="font-weight:500; color:var(--text)">${f.text}</div>
-                  <div class="fix-card-date">${new Date(f.createdAt).toLocaleDateString('fr-FR')}</div>
+                  <div class="fix-card-date">${f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')}</div>
                   <button onclick="deleteFixItem('${f.id}')" style="position:absolute; top:8px; right:8px; background:none; border:none; color:var(--text3); cursor:pointer; font-size:14px">×</button>
                 </div>
               `).join('')}
