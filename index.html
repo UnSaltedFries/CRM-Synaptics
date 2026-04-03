@@ -2790,50 +2790,9 @@
               </div>
             </div>
 
-            <!-- TABLE RÉSUMÉ -->
-            <div class="table-card">
-              <div class="table-top">
-                <div class="ct" style="display:flex;align-items:center;gap:10px">
-                  <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                  </svg>
-                  Résumé des Prospects
-                </div>
-                <div class="table-controls">
-                  <input class="tbl-search" type="text" placeholder="Rechercher..." id="searchQ"
-                    oninput="debouncedRenderTable()" />
-                  <select class="tbl-filter" id="filterResp" onchange="renderTable()">
-                    <option value="">Tous les commerciaux</option>
-                    <option value="Grégory">Grégory</option>
-                    <option value="Édouard">Édouard</option>
-                    <option value="Maxence">Maxence</option>
-                  </select>
-                  <button class="btn-today" style="background:var(--blue-l);color:var(--blue-d);border-color:var(--blue)"
-                    onclick="switchPage('prospects', document.getElementById('nav-prospects'))"
-                    title="Voir tous les prospects">Voir tout</button>
-                </div>
-              </div>
-              <div style="overflow-x:auto">
-                <table style="width:100%">
-                  <thead>
-                    <tr>
-                      <th style="width:25%">Prospect</th>
-                      <th style="width:12%">Statut</th>
-                      <th style="width:18%">Score</th>
-                      <th style="width:15%">Commercial</th>
-                      <th style="width:20%">Note</th>
-                      <th style="width:10%">Valeur</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tableBody"></tbody>
-                </table>
-              </div>
-              <div class="tbl-footer">
-                <span class="tbl-count" id="tblCount"></span>
-              </div>
-            </div>
 
           </div><!-- /page-dashboard -->
+
 
           <!-- ══ PAGE: KANBAN ══ -->
           <div class="page" id="page-kanban">
@@ -3434,9 +3393,11 @@
       const currentHour = new Date().getHours();
       const greeting = currentHour < 18 ? 'Bonjour' : 'Bonsoir';
       
+      const tousSaufPerdus = prospects.filter(p => p.statut !== 'perdu' && p.statut !== 'npai');
       const totalActive = prospects.filter(p => !['signe', 'perdu', 'npai'].includes(p.statut)).length;
-      const totalValue = prospects.filter(p => p.statut === 'signe').reduce((s, p) => s + (p.valeur || 0), 0);
-      const hotCount = prospects.filter(p => (p.score || 0) >= 80 && !['signe', 'perdu'].includes(p.statut)).length;
+      const caGagne = prospects.filter(p => p.statut === 'signe').reduce((s, p) => s + (Number(p.valeur) || 0), 0);
+      const potentielTotal = tousSaufPerdus.reduce((s, p) => s + (Number(p.valeur) || 0), 0);
+      const hotCount = prospects.filter(p => (p.score || 0) >= 80 && !['signe', 'perdu', 'npai'].includes(p.statut)).length;
 
       const userName = localStorage.getItem('synaptic_user_name') || 'Synaptics';
       el.innerHTML = `
@@ -3447,16 +3408,16 @@
           
           <div class="hero-stats">
             <div class="hero-stat-card">
-              <div class="hero-stat-val">${totalValue.toLocaleString('fr-FR')}€</div>
-              <div class="hero-stat-lbl">Chiffre d'affaires</div>
+              <div class="hero-stat-val">${caGagne.toLocaleString('fr-FR')}€</div>
+              <div class="hero-stat-lbl">CA Gagné</div>
             </div>
             <div class="hero-stat-card">
-              <div class="hero-stat-val">${hotCount}</div>
-              <div class="hero-stat-lbl">Hot Leads (Score > 80)</div>
+              <div class="hero-stat-val">${potentielTotal.toLocaleString('fr-FR')}€</div>
+              <div class="hero-stat-lbl">Valeur Totale</div>
             </div>
             <div class="hero-stat-card">
-              <div class="hero-stat-val">${prospects.length}</div>
-              <div class="hero-stat-lbl">Base totale</div>
+              <div class="hero-stat-val">${tousSaufPerdus.length}</div>
+              <div class="hero-stat-lbl">Prospects (Gagnés + Actifs)</div>
             </div>
           </div>
         </div>
@@ -3972,7 +3933,8 @@
       const today = new Date().toISOString().split('T')[0];
       const actifs = prospects.filter(p => p.statut !== 'signe' && p.statut !== 'perdu' && p.statut !== 'npai');
       const tousSaufPerdus = prospects.filter(p => p.statut !== 'perdu' && p.statut !== 'npai');
-      const valeurPipeline = actifs.reduce((s, p) => s + (Number(p.valeur) || 0), 0);
+      const valeurTotale = tousSaufPerdus.reduce((s, p) => s + (Number(p.valeur) || 0), 0);
+      const valeurGagne = prospects.filter(p => p.statut === 'signe').reduce((s, p) => s + (Number(p.valeur) || 0), 0);
       const convGlobal = prospects.length > 0 ? Math.round(prospects.filter(p => p.statut === 'signe').length / prospects.length * 100) : 0;
       const callsToday = prospects.reduce((s, p) => s + (p.appels || []).filter(a => a.date === today).length, 0);
       // Late relances
@@ -3980,9 +3942,9 @@
 
       const kpis = [
         { label: 'Prospects (Gagnés + Actifs)', val: tousSaufPerdus.length, icon: '<svg><use href="#icon-users"/></svg>', bg: 'var(--blue-l)', fg: 'var(--blue-d)' },
-        { label: 'Pipeline total', val: valeurPipeline.toLocaleString('fr-FR') + ' €', icon: '<svg><use href="#icon-dollar"/></svg>', bg: 'var(--green-l)', fg: 'var(--green-d)' },
-        { label: 'Conversion globale', val: convGlobal + '%', icon: '<svg><use href="#icon-activity"/></svg>', bg: 'var(--purple-l)', fg: 'var(--purple-d)', sub: convGlobal >= 20 ? 'c-up' : 'c-dn' },
-        { label: 'Appels aujourd\'hui', val: callsToday, icon: '<svg><use href="#icon-phone"/></svg>', bg: 'var(--teal-l)', fg: 'var(--teal-d)' },
+        { label: 'Potentiel Total (Tout)', val: valeurTotale.toLocaleString('fr-FR') + ' €', icon: '<svg><use href="#icon-dollar"/></svg>', bg: 'var(--purple-l)', fg: 'var(--purple-d)' },
+        { label: 'Chiffre d\'Affaire (Signé)', val: valeurGagne.toLocaleString('fr-FR') + ' €', icon: '<svg><use href="#icon-check-circle"/></svg>', bg: 'var(--green-l)', fg: 'var(--green-d)' },
+        { label: 'Conversion globale', val: convGlobal + '%', icon: '<svg><use href="#icon-activity"/></svg>', bg: 'var(--teal-l)', fg: 'var(--teal-d)', sub: convGlobal >= 20 ? 'c-up' : 'c-dn' },
         { label: 'Relances en retard', val: enRetard, icon: '<svg><use href="#icon-clock"/></svg>', bg: enRetard > 0 ? 'var(--red-l)' : 'var(--green-l)', fg: enRetard > 0 ? 'var(--red-d)' : 'var(--green-d)' },
       ];
 
