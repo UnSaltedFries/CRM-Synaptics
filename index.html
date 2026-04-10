@@ -4760,13 +4760,18 @@
             <div class="kanban-cards">
               ${items.sort((a, b) => b.createdAt - a.createdAt).map(f => `
                 <div class="fix-card" draggable="true" ondragstart="dragFix(event, '${f.id}')">
-                  <div style="font-weight:500; color:var(--text)">${f.text}</div>
-                  <div class="fix-card-date">${f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')}</div>
-                  <div style="position:absolute; top:8px; right:8px; display:flex; gap:4px">
-                    <button onclick="openFixModal('${f.id}')" style="background:none; border:none; color:var(--text3); cursor:pointer; font-size:14px; padding:2px" title="Modifier">
-                      <svg viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.5"><use href="#icon-edit"/></svg>
-                    </button>
-                    <button onclick="deleteFixItem('${f.id}')" style="background:none; border:none; color:var(--text3); cursor:pointer; font-size:16px; padding:2px" title="Supprimer">×</button>
+                  <div style="font-weight:500; color:var(--text); margin-bottom:12px; word-break:break-word">${f.text}</div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto">
+                    <div class="fix-card-date" style="margin-top:0">${f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')}</div>
+                    <div style="display:flex; gap:6px">
+                      <button onclick="openFixModal('${f.id}')" style="background:var(--surface2); border:0.5px solid var(--border); color:var(--text2); cursor:pointer; font-size:12px; padding:4px 8px; border-radius:6px; display:flex; align-items:center; gap:4px; transition:all 0.15s" onmouseover="this.style.background='var(--surface)';this.style.color='var(--blue)'" onmouseout="this.style.background='var(--surface2)';this.style.color='var(--text2)'" title="Modifier">
+                        <svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2.5"><use href="#icon-edit"/></svg>
+                        <span>Modifier</span>
+                      </button>
+                      <button onclick="deleteFixItem('${f.id}')" style="background:var(--red-l); border:0.5px solid var(--red-d); color:var(--red-d); cursor:pointer; font-size:12px; padding:4px 8px; border-radius:6px; display:flex; align-items:center; opacity:0.8; transition:all 0.15s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'" title="Supprimer">
+                        <span>Supprimer</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               `).join('')}
