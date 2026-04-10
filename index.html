@@ -3247,7 +3247,19 @@
         </div>
         <div class="mfield">
           <label>Type d'entreprise</label>
-          <input type="text" id="mTypeEntreprise" placeholder="PME, ETI, etc." />
+          <input type="text" id="mTypeEntreprise" list="typeOptions" placeholder="PME, ETI, Groupe..." />
+          <datalist id="typeOptions">
+            <option value="PME"></option>
+            <option value="ETI"></option>
+            <option value="Groupe"></option>
+            <option value="Entreprise Individuelle"></option>
+            <option value="Indépendant"></option>
+            <option value="Auto-entrepreneur"></option>
+          </datalist>
+        </div>
+        <div class="mfield">
+          <label>Nb de magasins / locations</label>
+          <input type="number" id="mNbLocations" placeholder="1" min="1" />
         </div>
         <div class="mfield">
           <label>Statut</label>
@@ -3908,7 +3920,10 @@
         <td style="font-size:12px;color:var(--text2)">${p.telephone || '—'}</td>
         <td style="font-size:12px;color:var(--text2)">${p.email || '—'}</td>
         <td style="font-size:12px;color:var(--text2)">${p.entreprise || '—'}</td>
-        <td style="font-size:12px;color:var(--text2)">${p.typeEntreprise || '—'}</td>
+        <td style="font-size:12px;color:var(--text2)">
+          ${p.typeEntreprise || '—'} 
+          ${p.nbLocations && p.nbLocations > 1 ? `<span style="font-size:10px;background:var(--surface2);padding:1px 4px;border-radius:4px;margin-left:4px" title="Nombre de locations">×${p.nbLocations}</span>` : ''}
+        </td>
         <td>${statusSelectHtml(p)}</td>
         <td style="font-weight:600; font-size:12px">
           <div style="display:flex; flex-direction:column">
@@ -4414,6 +4429,7 @@
           document.getElementById('mEmail').value = p.email || '';
           document.getElementById('mEntreprise').value = p.entreprise || '';
           document.getElementById('mTypeEntreprise').value = p.typeEntreprise || '';
+          document.getElementById('mNbLocations').value = p.nbLocations || '';
           document.getElementById('mStatut').value = p.statut || 'appeler';
           document.getElementById('mSource').value = p.source || 'LinkedIn';
           document.getElementById('mValeurFixe').value = p.valeurFixe || 0;
@@ -4432,6 +4448,7 @@
         document.getElementById('mEmail').value = '';
         document.getElementById('mEntreprise').value = '';
         document.getElementById('mTypeEntreprise').value = '';
+        document.getElementById('mNbLocations').value = '';
         document.getElementById('mStatut').value = 'appeler';
         document.getElementById('mSource').value = 'LinkedIn';
         document.getElementById('mValeurFixe').value = '';
@@ -4485,7 +4502,7 @@
       const today = new Date().toISOString().split('T')[0];
       const newP = {
         id: newId, nom: '', initiales: '+', av: '#E6F1FB:#185FA5',
-        telephone: '', email: '', entreprise: '', typeEntreprise: '', statut: 'appeler', source: 'Saisie Rapide',
+        telephone: '', email: '', entreprise: '', typeEntreprise: '', nbLocations: '', statut: 'appeler', source: 'Saisie Rapide',
         valeurFixe: 0, valeurMensuelle: 0, score: 0, resp: proFilterResp || teamMembers[0]?.name || 'Grégory', date: today, dateRelance: today, note: '', appels: []
       };
       prospects.unshift(newP);
@@ -4507,6 +4524,7 @@
         email: document.getElementById('mEmail').value.trim(),
         entreprise: document.getElementById('mEntreprise').value.trim(),
         typeEntreprise: document.getElementById('mTypeEntreprise').value.trim(),
+        nbLocations: Number(document.getElementById('mNbLocations').value) || '',
         statut: document.getElementById('mStatut').value,
         source: document.getElementById('mSource').value,
         valeurFixe: Number(document.getElementById('mValeurFixe').value) || 0,
