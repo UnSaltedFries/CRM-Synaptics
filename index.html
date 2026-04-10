@@ -1831,28 +1831,106 @@
       margin-bottom: 8px;
     }
 
-    .confirm-msg {
-      font-size: 13px;
-      color: var(--text2);
-      margin-bottom: 20px;
-    }
-
-    .confirm-actions {
+    /* ══ CONFIRM MODAL PRO ══ */
+    .confirm-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
-      gap: 8px;
+      align-items: center;
       justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
     }
 
-    .btn-confirm-cancel {
-      padding: 8px 20px;
-      border: 0.5px solid var(--border2);
-      border-radius: var(--radius);
-      background: transparent;
-      color: var(--text2);
-      font-size: 13px;
-      cursor: pointer;
-      transition: background 0.15s;
+    .confirm-overlay.show {
+      opacity: 1;
+      visibility: visible;
     }
+
+    .confirm-modal {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      transform: scale(0.9);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .confirm-overlay.show .confirm-modal {
+      transform: scale(1);
+    }
+
+    .confirm-icon {
+      width: 50px;
+      height: 50px;
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 24px;
+    }
+
+    .confirm-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .confirm-text {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .confirm-btns {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-confirm-no {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: 0.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm-yes {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: #ef4444;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-confirm-no:hover { background: var(--border); }
+    .btn-confirm-yes:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4); }
 
     .btn-confirm-cancel:hover {
       background: var(--surface2);
@@ -3235,20 +3313,15 @@
     </div>
   </div>
 
-  <!-- ── CONFIRM DELETE POPUP ── -->
-  <div class="confirm-bg" id="confirmBg">
-    <div class="confirm-box">
-      <div class="confirm-icon">
-        <svg viewBox="0 0 24 24">
-          <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14M10 11v6M14 11v6"
-            stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </div>
-      <div class="confirm-title">Supprimer ce prospect ?</div>
-      <div class="confirm-msg" id="confirmMsg">Cette action est irréversible.</div>
-      <div class="confirm-actions">
-        <button class="btn-confirm-cancel" onclick="closeConfirm()">Annuler</button>
-        <button class="btn-confirm-del" id="confirmDelBtn">Supprimer</button>
+  <!-- ══ PRO CONFIRM MODAL ══ -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-modal">
+      <div class="confirm-icon">⚠️</div>
+      <div class="confirm-title" id="confirmTitle">Confirmation</div>
+      <div class="confirm-text" id="confirmBody">Voulez-vous vraiment effectuer cette action ?</div>
+      <div class="confirm-btns">
+        <button class="btn-confirm-no" onclick="closeConfirm()">Annuler</button>
+        <button class="btn-confirm-yes" id="confirmYesBtn">Confirmer</button>
       </div>
     </div>
   </div>
@@ -3551,7 +3624,7 @@
       if (user) {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('appPage').style.display = 'flex';
-        if (!dbReady) loadProspects();
+        if (!dbReady) initRealtimeSync();
       } else {
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('appPage').style.display = 'none';
@@ -3598,38 +3671,57 @@
     }
 
     // ─── LOAD FROM FIRESTORE ───
-    function loadProspects() {
-      Promise.all([
-        db.collection('prospects').get(),
-        db.collection('config').doc('team').get(),
-        db.collection('config').doc('prospects').get(), // Check old format for migration
-        db.collection('fixes').get()
-      ]).then(function (results) {
-        const prospSnap = results[0], teamDoc = results[1], oldProspDoc = results[2], fixesSnap = results[3];
+    // ─── REALTIME DATA SYNC (onSnapshot) ───
+    var prospectsListener = null;
+    var fixesListener = null;
+    var teamListener = null;
 
-        // 1. Load Team
-        if (teamDoc.exists && teamDoc.data().data) {
-          teamMembers = teamDoc.data().data;
+    function initRealtimeSync() {
+      // 1. Listen for Team Changes
+      teamListener = db.collection('config').doc('team').onSnapshot(function(doc) {
+        if (doc.exists && doc.data().data) {
+          teamMembers = doc.data().data;
+          renderSettingsTeam();
+          updateRespSelects();
+        }
+      });
+
+      // 2. Listen for Prospects Changes
+      prospectsListener = db.collection('prospects').onSnapshot(function(snap) {
+        const loaded = [];
+        snap.forEach(doc => loaded.push(doc.data()));
+        
+        // Handle initial migration if collection is empty
+        if (loaded.length === 0 && !dbReady) {
+          handleMigrationOrDefaults();
+          return;
         }
 
-        // 2. Load Prospects (New format)
-        if (!prospSnap.empty) {
-          const loaded = [];
-          prospSnap.forEach(doc => loaded.push(doc.data()));
-          prospects = loaded;
-        } 
-        // 3. Migration: if new format empty but old exists
-        else if (oldProspDoc.exists && oldProspDoc.data().data) {
+        prospects = loaded;
+        dbReady = true;
+        onSyncComplete();
+      }, function(error) {
+        console.warn('Realtime sync error (prospects), falling back to local:', error);
+        fallbackToLocal();
+      });
+
+      // 3. Listen for Fixes Changes
+      fixesListener = db.collection('fixes').onSnapshot(function(snap) {
+        const loaded = [];
+        snap.forEach(doc => loaded.push(doc.data()));
+        fixes = loaded.sort((a, b) => b.createdAt - a.createdAt);
+        renderFixBoard();
+      });
+    }
+
+    function handleMigrationOrDefaults() {
+      db.collection('config').doc('prospects').get().then(doc => {
+        if (doc.exists && doc.data().data) {
           console.log("Migrating prospects to individual documents...");
-          prospects = oldProspDoc.data().data;
-          // Promptly save to new format
-          prospects.forEach(p => {
-            db.collection('prospects').doc(p.id).set(p);
-          });
-          // Optionally delete old doc? Let's keep it as backup for now.
-        }
-        else {
-          // Fallback to localStorage
+          prospects = doc.data().data;
+          prospects.forEach(p => db.collection('prospects').doc(p.id).set(p));
+        } else {
+          // Fallback to localStorage or Defaults
           try {
             const saved = localStorage.getItem('synaptic_prospects');
             prospects = saved ? JSON.parse(saved) : getDefaultProspects();
@@ -3637,73 +3729,62 @@
           // Initialize Firestore
           prospects.forEach(p => db.collection('prospects').doc(p.id).set(p));
         }
-
-        // 4. Load Fixes
-        try {
-          const savedFixes = localStorage.getItem('synaptic_fixes');
-          if (savedFixes) fixes = JSON.parse(savedFixes);
-        } catch(e) {}
-
-        if (fixesSnap && !fixesSnap.empty) {
-          const loadedFixes = [];
-          fixesSnap.forEach(doc => loadedFixes.push(doc.data()));
-          if (loadedFixes.length > 0) {
-            fixes = loadedFixes.sort((a, b) => b.createdAt - a.createdAt);
-          }
-        }
-
         dbReady = true;
-        renderAll();
-        setTimeout(() => {
-          document.documentElement.classList.add('loaded');
-          if (!localStorage.getItem('synaptic_user_name')) {
-            toggleModal('welcomeModalBg', true);
-            document.getElementById('welcomeNameInput').focus();
-          } else if (!localStorage.getItem('synaptic_tour_completed')) {
-            startTour();
-          }
-        }, 500);
-      }).catch(function (e) {
-        console.warn('Firebase load error, falling back to localStorage:', e);
-        try {
-          const saved = localStorage.getItem('synaptic_prospects');
-          prospects = saved ? JSON.parse(saved) : getDefaultProspects();
-        } catch (e2) { prospects = getDefaultProspects(); }
-        renderAll();
-        setTimeout(() => {
-          document.documentElement.classList.add('loaded');
-          if (!localStorage.getItem('synaptic_user_name')) {
-            toggleModal('welcomeModalBg', true);
-            document.getElementById('welcomeNameInput').focus();
-          } else if (!localStorage.getItem('synaptic_tour_completed')) {
-            startTour();
-          }
-        }, 500);
+        onSyncComplete();
       });
     }
 
-    function saveInitialName() {
-      const val = document.getElementById('welcomeNameInput').value.trim() || 'Synaptics';
-      localStorage.setItem('synaptic_user_name', val);
-      toggleModal('welcomeModalBg', false);
+    function fallbackToLocal() {
+      try {
+        const saved = localStorage.getItem('synaptic_prospects');
+        prospects = saved ? JSON.parse(saved) : getDefaultProspects();
+      } catch (e) { prospects = getDefaultProspects(); }
+      dbReady = true;
+      onSyncComplete();
+    }
+
+    function onSyncComplete() {
       renderAll();
-      if (!localStorage.getItem('synaptic_tour_completed')) {
-        setTimeout(startTour, 600);
+      
+      // Handle UI animations and page restore once
+      if (!window.initialLoadDone) {
+        window.initialLoadDone = true;
+        
+        const lastP = localStorage.getItem('synaptic_last_page');
+        const lastT = localStorage.getItem('synaptic_last_page_time');
+        const now = Date.now();
+        
+        if (lastP && lastT && (now - parseInt(lastT) < 30 * 60 * 1000)) {
+           switchPage(lastP);
+        } else {
+           switchPage('dashboard');
+        }
+
+        // Set up auto-reset timer (30 mins inactivity)
+        if (window.sessionTimeout) clearTimeout(window.sessionTimeout);
+        window.sessionTimeout = setTimeout(() => {
+          if (document.querySelector('.page.active').id !== 'page-dashboard') {
+            switchPage('dashboard');
+            showToast('Retour au Dashboard (Inactivité > 30 min)', 'info');
+          }
+        }, 30 * 60 * 1000);
+
+        setTimeout(() => {
+          document.documentElement.classList.add('loaded');
+          if (!localStorage.getItem('synaptic_user_name')) {
+            toggleModal('welcomeModalBg', true);
+            document.getElementById('welcomeNameInput').focus();
+          } else if (!localStorage.getItem('synaptic_tour_completed')) {
+            startTour();
+          }
+        }, 500);
       }
     }
 
-    function saveSettingName() {
-      const val = document.getElementById('settingUserName').value.trim();
-      if (!val) return;
-      localStorage.setItem('synaptic_user_name', val);
-      showToast('Nom mis à jour !', 'success');
-      renderAll();
-    }
-
-    // Inside renderSettingsTeam or switchPage('parametres'), ensure input is filled
+    // Adapt existing switchPage
     const oldSwitchPage = switchPage;
     switchPage = function(id, btn) {
-      oldSwitchPage(id, btn);
+      if (typeof oldSwitchPage === 'function') oldSwitchPage(id, btn);
       if (id === 'parametres') {
         const input = document.getElementById('settingUserName');
         if (input) input.value = localStorage.getItem('synaptic_user_name') || 'Synaptics';
@@ -3817,8 +3898,14 @@
     }
 
     function respSelectHtml(p) {
-      const resp = p.resp || teamMembers[0]?.name || 'Grégory';
+      const resp = p.resp || '';
+      const exists = teamMembers.some(m => m.name === resp);
+      const orphanOpt = (resp && !exists) ? `<option value="${resp}" selected>⚠️ ${resp} (ex-membre)</option>` : '';
+      const defaultOpt = !resp ? '<option value="" selected disabled>Choisir...</option>' : '';
+      
       return `<select class="ghost-input" onchange="updateInline('${p.id}', 'resp', this.value)" style="font-weight:600;width:auto">
+        ${defaultOpt}
+        ${orphanOpt}
         ${teamMembers.map(m => `<option value="${m.name}" ${m.name === resp ? 'selected' : ''}>${m.name}</option>`).join('')}
       </select>`;
     }
@@ -3928,7 +4015,6 @@
       renderKanban();
       renderFixBoard();
       renderSparkline();
-      saveData(); 
     }
 
     // ─── KPI ───
@@ -4141,10 +4227,13 @@
     function renderTeamStats() {
       const el = document.getElementById('teamStatsBody');
       if (!el) return;
+      const funnelStatuses = ['appeler', 'new', 'appele', 'contact', 'repondu', 'prop', 'rdv_planifie', 'rdv_effectue', 'nego', 'signe', 'gagne'];
+      
       el.innerHTML = teamMembers.map(m => {
         const mine = prospects.filter(p => p.resp === m.name);
-        const actifs = mine.filter(p => p.statut !== 'perdu' && p.statut !== 'signe').length;
-        const gagnes = mine.filter(p => p.statut === 'signe').length;
+        // Harmonized filter: funnel status, not perdu, not npai
+        const actifs = mine.filter(p => funnelStatuses.includes(p.statut) && !['signe', 'gagne', 'perdu', 'npai'].includes(p.statut)).length;
+        const gagnes = mine.filter(p => (p.statut === 'signe' || p.statut === 'gagne')).length;
         const conv = mine.length > 0 ? Math.round((gagnes / mine.length) * 100) : 0;
         const cls = conv >= 25 ? 'c-up' : conv >= 10 ? 'c-nu' : 'c-dn';
 
@@ -4235,6 +4324,7 @@
           if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
         }
         p.statut = newStatus;
+        saveData();
         renderAll();
       }
     }
@@ -4262,6 +4352,7 @@
       } else {
         p[field] = value;
       }
+      saveData();
       renderAll();
     }
 
@@ -4357,6 +4448,7 @@
         valeur: 0, score: 0, resp: proFilterResp || teamMembers[0]?.name || 'Grégory', date: today, dateRelance: today, note: '', appels: []
       };
       prospects.unshift(newP);
+      saveData();
       sortCol = null;
       sortDir = 'asc';
       proSortCol = null;
@@ -4398,25 +4490,28 @@
     function deleteProspect(id) {
       const p = prospects.find(x => x.id === id);
       if (!p) return;
-      document.getElementById('confirmMsg').textContent = `Êtes-vous sûr de vouloir supprimer le prospect "${p.nom}" ? Cette action est irréversible.`;
-      const btn = document.getElementById('confirmDelBtn');
-      btn.onclick = function() {
+      showConfirm(`Supprimer le prospect "${p.nom}" ? Cette action est irréversible.`, () => {
         prospects = prospects.filter(x => x.id !== id);
-        // Exécution de la suppression Firestore
-        db.collection('prospects').doc(id).delete()
-          .catch(e => console.warn('Erreur lors de la suppression Firestore:', e));
-        
+        db.collection('prospects').doc(id).delete().catch(e => console.warn('Firestore err:', e));
         renderAll();
         saveData();
-        closeConfirm();
-        closeModal();
-        showToast('Prospect supprimé avec succès');
-      };
-      toggleModal('confirmBg', true);
+      });
     }
 
-    function closeConfirm() { toggleModal('confirmBg', false); }
-    document.getElementById('confirmBg').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfirm(); });
+    function showConfirm(msg, callback, title = 'Confirmation') {
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmBody').textContent = msg;
+      const overlay = document.getElementById('confirmOverlay');
+      overlay.classList.add('show');
+      const yesBtn = document.getElementById('confirmYesBtn');
+      // Use a new clone to clear previous listeners
+      const newBtn = yesBtn.cloneNode(true);
+      yesBtn.parentNode.replaceChild(newBtn, yesBtn);
+      newBtn.onclick = () => { closeConfirm(); callback(); };
+    }
+
+    function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('show'); }
+    document.getElementById('confirmOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfirm(); });
 
     // ─── CALL HISTORY ───
     var callProspectId = null;
@@ -4446,12 +4541,18 @@
       });
       p.date = document.getElementById('callDate').value;
       renderCallHistory();
+      saveData();
       renderAll();
     }
 
     function deleteCall(idx) {
       const p = prospects.find(x => x.id === callProspectId);
-      if (p && p.appels) { p.appels.splice(idx, 1); renderCallHistory(); renderAll(); }
+      if (p && p.appels) { 
+        p.appels.splice(idx, 1); 
+        renderCallHistory(); 
+        saveData();
+        renderAll(); 
+      }
     }
 
     const callResultLabels = { repondu: 'Répondu', messagerie: 'Messagerie', injoignable: 'Injoignable', autre: 'Autre' };
@@ -4533,33 +4634,24 @@
       if (!newStatus) return;
       const ids = getSelectedIds(isPro);
       ids.forEach(id => { const p = prospects.find(x => x.id === id); if (p) p.statut = newStatus; });
+      saveData();
       renderAll();
     }
     function bulkAssign(isPro, newResp) {
       const ids = getSelectedIds(isPro);
       ids.forEach(id => { const p = prospects.find(x => x.id === id); if (p) p.resp = newResp; });
+      saveData();
       renderAll();
     }
     function bulkDelete(isPro) {
       const ids = getSelectedIds(isPro);
       if (ids.length === 0) return;
-      document.getElementById('confirmMsg').textContent = `Êtes-vous sûr de vouloir supprimer ${ids.length} prospect(s) ? Cette action est irréversible.`;
-      const btn = document.getElementById('confirmDelBtn');
-      btn.onclick = function() {
+      showConfirm(`Supprimer ${ids.length} prospect(s) ? Cette action est irréversible.`, () => {
         prospects = prospects.filter(p => !ids.includes(p.id));
-        
-        // Suppression groupée dans Firestore
-        ids.forEach(id => {
-          db.collection('prospects').doc(id).delete()
-            .catch(e => console.warn('Erreur suppression Firestore bulk:', id, e));
-        });
-
+        ids.forEach(id => db.collection('prospects').doc(id).delete().catch(e => console.warn('Bulk erase err:', e)));
         renderAll();
         saveData();
-        closeConfirm();
-        showToast(`${ids.length} prospect(s) supprimé(s)`);
-      };
-      toggleModal('confirmBg', true);
+      });
     }
 
     // Adapt legacy calls
@@ -4588,7 +4680,21 @@
       if (!btn) btn = document.getElementById('nav-' + id);
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       const targetPage = document.getElementById('page-' + id);
-      if (targetPage) targetPage.classList.add('active');
+      if (targetPage) {
+        targetPage.classList.add('active');
+        const now = Date.now();
+        localStorage.setItem('synaptic_last_page', id);
+        localStorage.setItem('synaptic_last_page_time', now);
+        
+        // Reset the auto-switch timer whenever the page changes
+        if (window.sessionTimeout) clearTimeout(window.sessionTimeout);
+        window.sessionTimeout = setTimeout(() => {
+          if (id !== 'dashboard') {
+            switchPage('dashboard');
+            showToast('Retour au Dashboard (Inactivité > 30 min)', 'info');
+          }
+        }, 30 * 60 * 1000);
+      }
       document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
       document.getElementById('pageBadge').textContent = pageNames[id] || id;
@@ -4605,8 +4711,22 @@
         renderProPersonBtns();
         renderProspectsTable();
       }
-
     }
+
+    // Global activity timer reset
+    function resetSessionTimer() {
+      const lastP = localStorage.getItem('synaptic_last_page');
+      if (lastP && lastP !== 'dashboard') {
+        if (window.sessionTimeout) clearTimeout(window.sessionTimeout);
+        window.sessionTimeout = setTimeout(() => {
+          switchPage('dashboard');
+          showToast('Retour au Dashboard (Inactivité > 30 min)', 'info');
+        }, 30 * 60 * 1000);
+      }
+    }
+    ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(name => {
+      document.addEventListener(name, resetSessionTimer, { passive: true });
+    });
 
     // ─── FIX BOARD LOGIC ───
     function renderFixBoard() {
@@ -4631,7 +4751,12 @@
                 <div class="fix-card" draggable="true" ondragstart="dragFix(event, '${f.id}')">
                   <div style="font-weight:500; color:var(--text)">${f.text}</div>
                   <div class="fix-card-date">${f.createdAt ? new Date(f.createdAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')}</div>
-                  <button onclick="deleteFixItem('${f.id}')" style="position:absolute; top:8px; right:8px; background:none; border:none; color:var(--text3); cursor:pointer; font-size:14px">×</button>
+                  <div style="position:absolute; top:8px; right:8px; display:flex; gap:4px">
+                    <button onclick="openFixModal('${f.id}')" style="background:none; border:none; color:var(--text3); cursor:pointer; font-size:14px; padding:2px" title="Modifier">
+                      <svg viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.5"><use href="#icon-edit"/></svg>
+                    </button>
+                    <button onclick="deleteFixItem('${f.id}')" style="background:none; border:none; color:var(--text3); cursor:pointer; font-size:16px; padding:2px" title="Supprimer">×</button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -4640,32 +4765,64 @@
       }).join('');
     }
 
-    function openFixModal() { toggleModal('fixModalBg', true); document.getElementById('fText').focus(); }
-    function closeFixModal() { toggleModal('fixModalBg', false); document.getElementById('fText').value = ''; }
+    var currentFixId = null;
+    function openFixModal(id = null) {
+      currentFixId = id;
+      const title = document.getElementById('fixModalBg').querySelector('.modal-title');
+      const textInput = document.getElementById('fText');
+      
+      if (id) {
+        const f = fixes.find(x => x.id === id);
+        if (f) {
+          textInput.value = f.text;
+          title.textContent = 'Modifier la note';
+        }
+      } else {
+        textInput.value = '';
+        title.textContent = 'Nouveau Fix / Amélioration';
+      }
+      
+      toggleModal('fixModalBg', true);
+      textInput.focus();
+    }
+    
+    function closeFixModal() { 
+      toggleModal('fixModalBg', false); 
+      document.getElementById('fText').value = ''; 
+      currentFixId = null;
+    }
 
     function saveFixItem() {
       const text = document.getElementById('fText').value.trim();
       if (!text) return;
-      const newItem = {
-        id: 'f' + Date.now(),
-        text: text,
-        status: 'todo',
-        createdAt: Date.now()
-      };
-      fixes.unshift(newItem);
+      
+      if (currentFixId) {
+        const f = fixes.find(x => x.id === currentFixId);
+        if (f) f.text = text;
+        showToast('Note mise à jour');
+      } else {
+        const newItem = {
+          id: 'f' + Date.now(),
+          text: text,
+          status: 'todo',
+          createdAt: Date.now()
+        };
+        fixes.unshift(newItem);
+        showToast('Note ajoutée au journal');
+      }
+      
       renderFixBoard();
       saveData();
       closeFixModal();
-      showToast('Note ajoutée au journal');
     }
 
     function deleteFixItem(id) {
-      if (!confirm('Supprimer cette note ?')) return;
-      fixes = fixes.filter(f => f.id !== id);
-      db.collection('fixes').doc(id).delete().catch(e => console.warn('Err delete fix:', e));
-      renderFixBoard();
-      saveData();
-      showToast('Note supprimée');
+      showConfirm('Supprimer cette note ? Cette action est irréversible.', () => {
+        fixes = fixes.filter(f => f.id !== id);
+        db.collection('fixes').doc(id).delete().catch(e => console.warn('Err delete fix:', e));
+        renderFixBoard();
+        saveData();
+      });
     }
 
     function dragFix(ev, id) {
@@ -4752,6 +4909,7 @@
       if (newName === oldName) { renderSettingsTeam(); return; }
       prospects.forEach(p => { if (p.resp === oldName) p.resp = newName; });
       teamMembers[i].name = newName;
+      saveData();
       renderSettingsTeam();
       renderAll();
     }
