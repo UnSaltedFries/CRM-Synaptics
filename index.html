@@ -4178,8 +4178,11 @@
 
     function typeEntrepriseSelectHtml(p) {
       const current = p.typeEntreprise || '';
+      const exists = businessTypes.includes(current);
+      const orphanOpt = (current && !exists) ? `<option value="${current}" selected>⚠️ ${current}</option>` : '';
       return `<select class="ghost-input" onchange="updateInline('${p.id}', 'typeEntreprise', this.value)" style="width:auto; font-weight:500">
         <option value="" ${!current ? 'selected' : ''}>—</option>
+        ${orphanOpt}
         ${businessTypes.map(t => `<option value="${t}" ${t === current ? 'selected' : ''}>${t}</option>`).join('')}
       </select>`;
     }
@@ -4629,7 +4632,6 @@
     var modalProspectId = null;
     function openModal(id = null) {
       modalProspectId = id;
-      updateTypeSelects(); // Ensure dropdown is populated
       const title = document.getElementById('modalTitle');
       const btnDel = document.getElementById('btnDelProspect');
       if (id) {
@@ -4642,7 +4644,7 @@
           document.getElementById('mTelephone').value = p.telephone || '';
           document.getElementById('mEmail').value = p.email || '';
           document.getElementById('mEntreprise').value = p.entreprise || '';
-          document.getElementById('mTypeEntreprise').value = p.typeEntreprise || '';
+          updateTypeSelects(p.typeEntreprise); // Populate and select
           document.getElementById('mNbLocations').value = p.nbLocations || '';
           document.getElementById('mStatut').value = p.statut || 'appeler';
           document.getElementById('mSource').value = p.source || 'LinkedIn';
@@ -4662,7 +4664,7 @@
         document.getElementById('mTelephone').value = '';
         document.getElementById('mEmail').value = '';
         document.getElementById('mEntreprise').value = '';
-        document.getElementById('mTypeEntreprise').value = '';
+        updateTypeSelects(''); // Reset dropdown
         document.getElementById('mNbLocations').value = '';
         document.getElementById('mStatut').value = 'appeler';
         document.getElementById('mSource').value = 'LinkedIn';
@@ -5229,12 +5231,17 @@
       });
     }
 
-    function updateTypeSelects() {
+    function updateTypeSelects(selectedValue = null) {
       const selectors = [document.getElementById('mTypeEntreprise')];
       selectors.forEach(sel => {
         if (!sel) return;
-        const current = sel.value;
-        sel.innerHTML = '<option value="">Choisir un type...</option>' + businessTypes.map(t => `<option value="${t}"${t === current ? ' selected' : ''}>${t}</option>`).join('');
+        const current = selectedValue || sel.value;
+        const exists = businessTypes.includes(current);
+        const orphanOpt = (current && !exists) ? `<option value="${current}" selected>⚠️ ${current}</option>` : '';
+        
+        sel.innerHTML = '<option value="">Choisir un type...</option>' + 
+          orphanOpt + 
+          businessTypes.map(t => `<option value="${t}"${t === current ? ' selected' : ''}>${t}</option>`).join('');
       });
     }
 
