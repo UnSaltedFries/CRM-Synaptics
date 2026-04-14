@@ -2019,14 +2019,28 @@ function renderSettingsBusinessTypes() {
   updateTypeSelects();
 }
 
-function addBusinessType() {
+function addBusinessType(manualName = null) {
   const input = document.getElementById('newBusinessTypeName');
-  const name = input ? input.value.trim() : "";
+  const name = manualName || (input ? input.value.trim() : "");
   if (!name) return;
+  if (businessTypes.includes(name)) {
+    showToast('Ce type existe déjà', 'info');
+    return;
+  }
   businessTypes.push(name);
-  renderSettingsBusinessTypes();
   saveData();
+  renderSettingsBusinessTypes();
+  renderProSegments();
+  updateTypeSelects();
   if (input) input.value = '';
+  showToast(`Catégorie "${name}" ajoutée`, 'success');
+}
+
+function promptAddSegment() {
+  const name = prompt("Nom de la nouvelle catégorie (ex: Agence, Hôtel...) :");
+  if (name && name.trim()) {
+    addBusinessType(name.trim());
+  }
 }
 
 function removeBusinessType(i) {
@@ -2189,6 +2203,13 @@ function renderProSegments() {
       </div>
     `;
   });
+
+  // Add "+" button
+  html += `
+    <div class="segment-pill" onclick="promptAddSegment()" style="border-style:dashed; border-color:var(--border2); opacity:0.8; background:none" onmouseover="this.style.opacity=1;this.style.borderColor='var(--blue)'" onmouseout="this.style.opacity=0.8;this.style.borderColor='var(--border2)'">
+      <span style="font-size:18px; line-height:1">+</span>
+    </div>
+  `;
 
   container.innerHTML = html;
 }
