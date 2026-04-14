@@ -55,6 +55,8 @@ const teamColors = [
 ];
 
 const pageNames = { dashboard: 'Dashboard', prospects: 'Résumé des Prospects', kanban: 'Pipeline Kanban', fixe: 'Fixes & Améliorations', 'import-export': 'Import / Export', parametres: 'Paramètres' };
+const funnelStatuses = ['appeler', 'new', 'appele', 'contact', 'repondu', 'prop', 'rdv_planifie', 'rdv_effectue', 'nego', 'signe', 'gagne'];
+const stageIndex = { appeler: 0, new: 0, appele: 1, contact: 1, repondu: 2, prop: 2, rdv_planifie: 3, rdv_effectue: 3, nego: 3, signe: 4, gagne: 4 };
 
 // ─── INITIALIZATION ───
 firebase.initializeApp(firebaseConfig);
@@ -684,8 +686,6 @@ window.switchPage = function (id, btn) {
 };
 
 const stageMap = { 'new': 'Nouveaux', 'contact': 'Contactés', 'prop': 'Proposition', 'nego': 'Négociation', 'gagne': 'Gagnés' };
-const pipeKeys = ['appeler', 'appele', 'repondu', 'rdv_effectue', 'signe'];
-const pipeNames = ['À appeler', 'Appelé', 'Répondu', 'RDV effectué', 'Signé'];
 const subStages = { rdv_effectue: 'rdv_planifie', signe: 'perdu' };
 const subNames = { rdv_planifie: 'RDV planifié', perdu: 'Perdu' };
 const pColors = [
@@ -946,7 +946,6 @@ function renderAll() {
 }
 
 function renderKPI() {
-  const funnelStatuses = ['appeler', 'new', 'appele', 'contact', 'repondu', 'prop', 'rdv_planifie', 'rdv_effectue', 'nego', 'signe', 'gagne'];
   const today = new Date().toISOString().split('T')[0];
   const tousSaufPerdus = prospects.filter(p => p.statut !== 'perdu' && p.statut !== 'npai' && funnelStatuses.includes(p.statut));
   const activelyHeld = tousSaufPerdus.filter(p => !['signe', 'gagne'].includes(p.statut));
@@ -1113,10 +1112,7 @@ function renderPipeline() {
   const labDiv = document.getElementById('stageLabels');
   if (labDiv) {
     labDiv.innerHTML = stageNames.map((n, i) => {
-      const sVal = prospects.filter(p => {
-        const sIdx = { appeler: 0, new: 0, appele: 1, contact: 1, repondu: 2, prop: 2, rdv_planifie: 3, rdv_effectue: 3, nego: 3, signe: 4, gagne: 4 };
-        return sIdx[p.statut] === i;
-      }).reduce((s, p) => s + getACV(p), 0);
+      const sVal = prospects.filter(p => stageIndex[p.statut] === i).reduce((s, p) => s + getACV(p), 0);
       return `<div class="sl"><span>${n}</span><strong>${currentData[i]}</strong><div style="font-size:10px;opacity:0.7">${sVal.toLocaleString('fr-FR')}€</div></div>`;
     }).join('');
   }
@@ -1125,10 +1121,7 @@ function renderPipeline() {
 function showTT(e, i) {
   const sv = currentData[i], ev = currentData[i + 1];
   const pct = sv > 0 ? Math.round(ev / sv * 100) : 0, lost = sv - ev;
-  const sVal = prospects.filter(p => {
-    const sIdx = { appeler: 0, new: 0, appele: 1, contact: 1, repondu: 2, prop: 2, rdv_planifie: 3, rdv_effectue: 3, nego: 3, signe: 4, gagne: 4 };
-    return sIdx[p.statut] === i;
-  }).reduce((s, p) => s + getACV(p), 0);
+  const sVal = prospects.filter(p => stageIndex[p.statut] === i).reduce((s, p) => s + getACV(p), 0);
 
   const tt = document.getElementById('ptt');
   if (tt) {
@@ -1743,7 +1736,7 @@ function closeSidebar() {
   document.documentElement.classList.remove('sidebar-open');
 }
 
-const pageNames = { dashboard: 'Dashboard', prospects: 'Résumé des Prospects', kanban: 'Pipeline Kanban', fixe: 'Fixes & Améliorations', 'import-export': 'Import / Export', parametres: 'Paramètres' };
+// pageNames moved to top
 
 // Global activity timer reset
 function resetSessionTimer() {
