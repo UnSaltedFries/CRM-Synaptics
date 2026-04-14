@@ -1168,6 +1168,11 @@ svg#pipeline text {
   border-bottom: 0.5px solid var(--border);
   flex-wrap: wrap;
   gap: 10px;
+  position: sticky;
+  top: 52px; /* Topnav height */
+  z-index: 100;
+  background: var(--surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .table-top .ct {
