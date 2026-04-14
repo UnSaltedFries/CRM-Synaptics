@@ -624,6 +624,31 @@
     </div>
   </div>
 
+  <!-- ── MODAL: MANAGE CATEGORIES ── -->
+  <div class="modal-bg" id="categoryModalBg">
+    <div class="modal" style="width:400px">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Gérer les catégories</div>
+          <div class="modal-sub">Ajoutez ou supprimez vos segments de prospection.</div>
+        </div>
+        <button class="modal-close" onclick="toggleModal('categoryModalBg', false)">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="categoryList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px; max-height:300px; overflow-y:auto; padding-right:5px">
+          <!-- Dynamically filled -->
+        </div>
+        <div style="display:flex; gap:8px; padding-top:15px; border-top:1px solid var(--border)">
+          <input type="text" id="modalNewCategoryInput" placeholder="Nouvelle catégorie..." style="flex:1; padding:10px 14px; border:0.5px solid var(--border2); border-radius:12px; background:var(--surface2); color:var(--text); font-size:13px; outline:none" onkeydown="if(event.key==='Enter')addCategoryFromModal()"/>
+          <button class="btn-save" onclick="addCategoryFromModal()" style="border-radius:12px">Ajouter</button>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding-top:10px">
+        <button class="btn-cancel" style="width:100%" onclick="toggleModal('categoryModalBg', false)">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-bg" id="modalBg">
     <div class="modal">
       <div class="modal-header">

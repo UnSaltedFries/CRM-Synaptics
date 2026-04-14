@@ -2036,19 +2036,58 @@ function addBusinessType(manualName = null) {
   showToast(`Catégorie "${name}" ajoutée`, 'success');
 }
 
-function promptAddSegment() {
-  const name = prompt("Nom de la nouvelle catégorie (ex: Agence, Hôtel...) :");
-  if (name && name.trim()) {
-    addBusinessType(name.trim());
+function openCategoryModal() {
+  renderCategoryList();
+  toggleModal('categoryModalBg', true);
+  setTimeout(() => {
+    const input = document.getElementById('modalNewCategoryInput');
+    if (input) input.focus();
+  }, 400);
+}
+
+function renderCategoryList() {
+  const container = document.getElementById('categoryList');
+  if (!container) return;
+
+  if (businessTypes.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text3); font-size:13px">Aucune catégorie enregistrée.</div>`;
+    return;
+  }
+
+  container.innerHTML = businessTypes.map((t, i) => `
+    <div class="category-item">
+      <span>${t}</span>
+      <button class="btn-remove" onclick="removeCategoryFromModal(${i})" title="Supprimer">
+        <svg viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+function addCategoryFromModal() {
+  const input = document.getElementById('modalNewCategoryInput');
+  const name = input ? input.value.trim() : "";
+  if (!name) return;
+  addBusinessType(name);
+  renderCategoryList();
+  if (input) input.value = '';
+}
+
+function removeCategoryFromModal(i) {
+  const name = businessTypes[i];
+  if (confirm(`Supprimer la catégorie "${name}" ?`)) {
+    businessTypes.splice(i, 1);
+    saveData();
+    renderCategoryList();
+    renderProSegments();
+    renderSettingsBusinessTypes();
+    updateTypeSelects();
+    showToast(`Catégorie "${name}" supprimée`, 'info');
   }
 }
 
 function removeBusinessType(i) {
-  const name = businessTypes[i];
-  if (!confirm(`Supprimer le type "${name}" ?`)) return;
-  businessTypes.splice(i, 1);
-  renderSettingsBusinessTypes();
-  saveData();
+  removeCategoryFromModal(i);
 }
 
 function startEditBusinessType(i) {
@@ -2204,9 +2243,9 @@ function renderProSegments() {
     `;
   });
 
-  // Add "+" button
+  // Add "Manage" button
   html += `
-    <div class="segment-pill" onclick="promptAddSegment()" style="border-style:dashed; border-color:var(--border2); opacity:0.8; background:none" onmouseover="this.style.opacity=1;this.style.borderColor='var(--blue)'" onmouseout="this.style.opacity=0.8;this.style.borderColor='var(--border2)'">
+    <div class="segment-pill" onclick="openCategoryModal()" style="border-style:dashed; border-color:var(--border2); opacity:0.8; background:none" onmouseover="this.style.opacity=1;this.style.borderColor='var(--blue)'" onmouseout="this.style.opacity=0.8;this.style.borderColor='var(--border2)'" title="Gérer les catégories">
       <span style="font-size:18px; line-height:1">+</span>
     </div>
   `;
