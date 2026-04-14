@@ -1588,7 +1588,14 @@ function renderPresenceWidget() {
   const el = document.getElementById('presenceWidget');
   if (!el) return;
   if (onlineUsers.length <= 1) {
-    el.innerHTML = '';
+    el.innerHTML = `
+      <div class="presence-bar">
+        <div class="presence-title">Équipe en ligne</div>
+        <div style="padding:10px 15px; font-size:12px; color:var(--text3); font-style:italic">
+          Vous êtes actuellement seul en ligne
+        </div>
+      </div>
+    `;
     return;
   }
   const others = onlineUsers.filter(u => u.id !== MY_USER_ID);
@@ -2258,6 +2265,8 @@ function startTour() {
   
   const driverObj = driver.js.driver({
     showProgress: true,
+    allowClose: false,
+    overlayClickable: false,
     steps: [
       { element: '#sidebar', popover: { title: 'Navigation', description: 'Accédez ici à vos prospects, au Kanban et à vos paramètres.', side: "right", align: 'start' }},
       { element: '#dashboardHero', popover: { title: 'Tableau de Bord', description: 'Suivez vos KPIs et votre activité quotidienne en un coup d\'œil.', side: "bottom", align: 'start' }},
