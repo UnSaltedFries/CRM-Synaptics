@@ -286,9 +286,12 @@ auth.onAuthStateChanged(function (user) {
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('appPage').style.display = 'flex';
     if (!dbReady) initRealtimeSync();
+    // In case sync is slow, don't keep them on splash forever
+    setTimeout(hideSplashScreen, 3000);
   } else {
     document.getElementById('loginPage').style.display = 'flex';
     document.getElementById('appPage').style.display = 'none';
+    hideSplashScreen();
   }
 });
 
