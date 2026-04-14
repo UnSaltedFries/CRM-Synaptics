@@ -1591,7 +1591,7 @@ function renderPresenceWidget() {
     el.innerHTML = `
       <div class="presence-bar">
         <div class="presence-title">Équipe en ligne</div>
-        <div style="padding:10px 15px; font-size:12px; color:var(--text3); font-style:italic">
+        <div class="presence-status" style="padding:10px 15px; font-size:12px; color:var(--text3); font-style:italic">
           Vous êtes actuellement seul en ligne
         </div>
       </div>

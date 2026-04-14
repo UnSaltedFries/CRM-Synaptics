@@ -2450,12 +2450,36 @@ html.dark .sidebar {
   font-size: 11px;
   color: var(--text3);
   white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.2s;
 }
 
-.sidebar.open .sidebar-footer {
-  opacity: 1;
+.sidebar-footer .v-short {
+  display: none;
+}
+
+.sidebar:not(.open) .sidebar-footer {
+  text-align: center;
+  padding: 14px 0;
+}
+
+.sidebar:not(.open) .sidebar-footer .v-full {
+  display: none;
+}
+
+.sidebar:not(.open) .sidebar-footer .v-short {
+  display: block;
+}
+
+/* Presence Widget Responsive */
+.sidebar:not(.open) .presence-title,
+.sidebar:not(.open) .presence-status {
+  display: none;
+}
+
+.sidebar:not(.open) #presenceWidget {
+  padding: 15px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .sidebar-overlay {
