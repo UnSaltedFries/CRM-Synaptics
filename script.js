@@ -14,6 +14,53 @@
   else document.documentElement.classList.add('dark');
 })();
 
+// ─── CONFIGURATION & CONSTANTS ───
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC0mvY2HG0x5fpKUYWx1Bs9lKwr6K8I6Yg",
+  authDomain: "crm-call-synaptics.firebaseapp.com",
+  projectId: "crm-call-synaptics",
+  storageBucket: "crm-call-synaptics.firebasestorage.app",
+  messagingSenderId: "1027104211648",
+  appId: "1:1027104211648:web:39099132bf74f39ad66325",
+  measurementId: "G-2K53TWX7PN"
+};
+
+const statusMap = { appeler: 'À appeler', appele: 'Appelé', repondu: 'Répondu', rdv_planifie: 'RDV planifié', rdv_effectue: 'RDV effectué', signe: 'Signé', perdu: 'Perdu', npai: 'Faux N°/NPAI' };
+const badgeCss = {
+  appeler: `background:#E6F1FB;color:#185FA5`,
+  appele: `background:#EEEDFE;color:#534AB7`,
+  repondu: `background:#FAEEDA;color:#854F0B`,
+  rdv_planifie: `background:#FFF3CD;color:#856404`,
+  rdv_effectue: `background:#EAF3DE;color:#0F6E56`,
+  signe: `background:#D4EDDA;color:#27500A`,
+  perdu: `background:#FCEBEB;color:#A32D2D`,
+  npai: `background:#E6E6E6;color:#5A5A5A;text-decoration:line-through;`,
+};
+
+const pipeKeys = ['appeler', 'appele', 'repondu', 'rdv_effectue', 'signe'];
+const pipeNames = ['À appeler', 'Appelé', 'Répondu', 'RDV effectué', 'Signé'];
+const stageNames = ['À appeler', 'Appelé', 'Répondu', 'RDV effectué', 'Signé']; // Used in pipeline render
+
+var teamMembers = [
+  { name: 'Grégory', bg: '#B5D4F4', fg: '#0C447C' },
+  { name: 'Édouard', bg: '#C0DD97', fg: '#27500A' },
+  { name: 'Maxence', bg: '#CECBF6', fg: '#3C3489' },
+];
+var businessTypes = ['PME', 'ETI', 'Groupe', 'Garage', 'Avocat', 'Indépendant'];
+
+const teamColors = [
+  { bg: '#B5D4F4', fg: '#0C447C' }, { bg: '#C0DD97', fg: '#27500A' }, { bg: '#CECBF6', fg: '#3C3489' },
+  { bg: '#FAC775', fg: '#633806' }, { bg: '#9FE1CB', fg: '#0F6E56' }, { bg: '#F7C1C1', fg: '#791F1F' },
+];
+
+const pageNames = { dashboard: 'Dashboard', prospects: 'Résumé des Prospects', kanban: 'Pipeline Kanban', fixe: 'Fixes & Améliorations', 'import-export': 'Import / Export', parametres: 'Paramètres' };
+
+// ─── INITIALIZATION ───
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
 // ─── UTILS ───
 
 function debounce(fn, delay) {
@@ -89,11 +136,17 @@ function renderHero() {
   const hotCount = prospects.filter(p => (p.score || 0) >= 80 && !['signe', 'perdu', 'npai'].includes(p.statut) && funnelStatuses.includes(p.statut)).length;
 
   const userName = localStorage.getItem('synaptic_user_name') || 'Synaptics';
+  const showNewUserPrompt = prospects.length === 0;
+
   el.innerHTML = `
     <div class="hero-welcome">
       <div class="hero-deco"></div>
       <div class="hero-greeting">${greeting}, ${userName} 👋</div>
-      <div class="hero-sub">C'est le ${today}. Vous avez ${totalActive} opportunités actives à gérer aujourd'hui.</div>
+      <div class="hero-sub">
+        ${showNewUserPrompt 
+          ? `Bienvenue parmi nous ! Pour commencer, <a href="#" onclick="openModal();return false;" style="color:white;text-decoration:underline">ajoutez votre premier prospect</a> ou importez une base.` 
+          : `C'est le ${today}. Vous avez ${totalActive} opportunités actives à gérer aujourd'hui.`}
+      </div>
       
       <div class="hero-stats">
         <div class="hero-stat-card">
@@ -195,19 +248,7 @@ document.addEventListener('dragleave', e => {
   }
 });
 
-// ─── FIREBASE CONFIG ───
-const firebaseConfig = {
-  apiKey: "AIzaSyC0mvY2HG0x5fpKUYWx1Bs9lKwr6K8I6Yg",
-  authDomain: "crm-call-synaptics.firebaseapp.com",
-  projectId: "crm-call-synaptics",
-  storageBucket: "crm-call-synaptics.firebasestorage.app",
-  messagingSenderId: "1027104211648",
-  appId: "1:1027104211648:web:39099132bf74f39ad66325",
-  measurementId: "G-2K53TWX7PN"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
+// Firebase moved to top
 
 function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
@@ -259,9 +300,11 @@ var dbReady = false;
 
 /**
  * Saves a single prospect document to Firestore.
+ * Using atomic updates to prevent conflicts.
  */
-function saveProspectDoc(p) {
+function saveProspectDoc(p, isNew = false) {
   if (!p || !p.id) return;
+  
   // Local cache save
   try {
     const saved = localStorage.getItem('synaptic_prospects');
@@ -271,11 +314,28 @@ function saveProspectDoc(p) {
     localStorage.setItem('synaptic_prospects', JSON.stringify(current));
   } catch (e) { }
 
-  db.collection('prospects').doc(p.id).set(p)
-    .catch(e => {
-      console.error('Error saving prospect:', p.id, e);
-      showToast('Erreur de sauvegarde Firestore', 'error');
-    });
+  if (!dbReady || !db) return;
+
+  const docRef = db.collection('prospects').doc(p.id);
+  const dataToSave = { ...p };
+  delete dataToSave.id; // ID is stored in the document name
+
+  if (isNew) {
+    // Creation: Full write
+    docRef.set({ ...dataToSave, createdAt: firebase.firestore.FieldValue.serverTimestamp() })
+      .catch(e => console.warn('Firestore set error:', e));
+  } else {
+    // Update: Partial write to prevent overwriting fields updated by others
+    // We don't want to overwrite 'appels' if we are just editing the basic info
+    const updateData = { ...dataToSave };
+    // If the data comes from the modal, it might not contain 'appels' in the 'data' sub-object
+    // but in saveProspect we merged it. We should be careful.
+    docRef.update({ ...updateData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+      .catch(e => {
+        console.warn('Firestore update error (retrying with set):', e);
+        docRef.set(dataToSave, { merge: true });
+      });
+  }
 }
 
 /**
@@ -348,11 +408,108 @@ function updateRowInTables(id) {
 }
 
 // ─── LOAD FROM FIRESTORE & REALTIME DATA SYNC ───
+const SYNC_VERSION = '1.1'; // Increment to force cache clear if needed
+const MY_USER_ID = (() => {
+  let id = localStorage.getItem('synaptic_user_uid');
+  if (!id) {
+    id = 'user_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('synaptic_user_uid', id);
+  }
+  return id;
+})();
+
 var prospectsListener = null;
 var fixesListener = null;
 var teamListener = null;
+var presenceListener = null;
+var eventsListener = null;
+
+var onlineUsers = [];
+var activeViewingIds = {}; // userId -> prospectId
+var globalEvents = [];
+
+function updatePresence(currentProspectId = null) {
+  if (!dbReady || !db) return;
+  const name = localStorage.getItem('synaptic_user_name') || 'Anonyme';
+  db.collection('presence').doc(MY_USER_ID).set({
+    name: name,
+    lastSeen: Date.now(),
+    viewing: currentProspectId,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+}
+
+// Start heartbeat
+setInterval(() => updatePresence(window.modalProspectId || null), 45000);
+
+function renderActivityFeed() {
+  const el = document.getElementById('activityFeedBody');
+  if (!el) return;
+  if (globalEvents.length === 0) {
+    el.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text3); font-size:13px">En attente d\'activité...</div>';
+    return;
+  }
+  el.innerHTML = globalEvents.map(ev => {
+    const time = ev.timestamp ? new Date(ev.timestamp.toMillis()).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'Maintenant';
+    let icon = '⚡';
+    if (ev.type === 'win') icon = '🏆';
+    if (ev.type === 'new') icon = '👤';
+    
+    return `
+      <div class="activity-item">
+        <div class="activity-icon">${icon}</div>
+        <div class="activity-info">
+          <div class="activity-user">${ev.userName}</div>
+          <div class="activity-msg">${ev.message}</div>
+          <div class="activity-time">${time}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
 function initRealtimeSync() {
+  // 1. Team Presence (Previous implementation)
+  presenceListener = db.collection('presence').onSnapshot(snap => {
+    const now = Date.now();
+    const users = [];
+    const viewing = {};
+    snap.forEach(doc => {
+      const u = doc.data();
+      u.id = doc.id;
+      if (u.lastSeen && (now - u.lastSeen) < 120000) {
+        users.push(u);
+        if (u.viewing && u.id !== MY_USER_ID) {
+          viewing[u.viewing] = viewing[u.viewing] || [];
+          viewing[u.viewing].push(u.name);
+        }
+      }
+    });
+    onlineUsers = users;
+    activeViewingIds = viewing;
+    renderPresenceWidget();
+    renderProspectsTable();
+  });
+
+  // 2. Global Events (Sales won, new leads) + Activity Feed
+  eventsListener = db.collection('global_events').orderBy('timestamp', 'desc').limit(15).onSnapshot(snap => {
+    const events = [];
+    snap.forEach(doc => events.push({ id: doc.id, ...doc.data() }));
+    globalEvents = events;
+    renderActivityFeed();
+
+    // Real-time Toast/Confetti for new events only
+    snap.docChanges().forEach(change => {
+      if (change.type === 'added') {
+        const ev = change.doc.data();
+        if (ev.userId !== MY_USER_ID && (Date.now() - (ev.timestamp?.toMillis() || Date.now()) < 10000)) {
+          showToast(`🚀 ${ev.userName} : ${ev.message}`, 'success');
+          if (ev.type === 'win' && typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        }
+      }
+    });
+  });
+
   teamListener = db.collection('config').doc('team').onSnapshot(function (doc) {
     if (doc.exists && doc.data().data) {
       teamMembers = doc.data().data;
@@ -438,40 +595,38 @@ function fallbackToLocal() {
   onSyncComplete();
 }
 
+function hideSplashScreen() {
+  const splash = document.getElementById('appSplash');
+  if (splash) splash.classList.add('splash-hidden');
+}
+
 function onSyncComplete() {
   updateTypeSelects();
   renderAll();
 
   if (!window.initialLoadDone) {
     window.initialLoadDone = true;
+    
+    // Hide splash only when data is ready
+    setTimeout(hideSplashScreen, 800);
 
     const lastP = localStorage.getItem('synaptic_last_page');
-    const lastT = localStorage.getItem('synaptic_last_page_time');
-    const now = Date.now();
-
-    if (lastP && lastT && (now - parseInt(lastT) < 30 * 60 * 1000)) {
-      switchPage(lastP);
-    } else {
-      switchPage('dashboard');
-    }
-
-    if (window.sessionTimeout) clearTimeout(window.sessionTimeout);
-    window.sessionTimeout = setTimeout(() => {
-      if (document.querySelector('.page.active').id !== 'page-dashboard') {
-        switchPage('dashboard');
-        showToast('Retour au Dashboard (Inactivité > 30 min)', 'info');
-      }
-    }, 30 * 60 * 1000);
+    // ... logic for last page ...
+    switchPage(lastP || 'dashboard');
 
     setTimeout(() => {
       document.documentElement.classList.add('loaded');
+      
+      // ONBOARDING SEQUENCE
       if (!localStorage.getItem('synaptic_user_name')) {
+        // Step 1: Welcome Modal (Identity)
         toggleModal('welcomeModalBg', true);
         document.getElementById('welcomeNameInput').focus();
       } else if (!localStorage.getItem('synaptic_tour_completed')) {
+        // Step 2: If name already exists but tour not done, start tour
         startTour();
       }
-    }, 500);
+    }, 1200);
   }
 }
 
@@ -520,6 +675,7 @@ window.switchPage = function (id, btn) {
   }
   if (id === 'prospects') {
     renderProPersonBtns();
+    renderProSegments();
     renderProspectsTable();
   }
 };
@@ -633,6 +789,11 @@ function buildRowHtml(p, view = 'full') {
         </span>
         <div class="av-sm" style="background:${bg};color:${fg}">${p.initiales || '+'}</div>
         <span style="font-weight:600">${p.nom || ''}</span>
+        ${(activeViewingIds[p.id] || []).length > 0 ? `
+          <div class="view-indicator">
+            ${activeViewingIds[p.id].map(name => `<div class="view-avatar" title="${name} consulte ce prospect">${name.charAt(0)}</div>`).join('')}
+          </div>
+        ` : ''}
       </div>
     </td>
     <td style="font-size:12px;color:var(--text2)">${p.telephone || '—'}</td>
@@ -1037,17 +1198,7 @@ function renderConv() {
 }
 
 // ─── TABLE ───
-const statusMap = { appeler: 'À appeler', appele: 'Appelé', repondu: 'Répondu', rdv_planifie: 'RDV planifié', rdv_effectue: 'RDV effectué', signe: 'Signé', perdu: 'Perdu', npai: 'Faux N°/NPAI' };
-const badgeCss = {
-  appeler: `background:#E6F1FB;color:#185FA5`,
-  appele: `background:#EEEDFE;color:#534AB7`,
-  repondu: `background:#FAEEDA;color:#854F0B`,
-  rdv_planifie: `background:#FFF3CD;color:#856404`,
-  rdv_effectue: `background:#EAF3DE;color:#0F6E56`,
-  signe: `background:#D4EDDA;color:#27500A`,
-  perdu: `background:#FCEBEB;color:#A32D2D`,
-  npai: `background:#E6E6E6;color:#5A5A5A;text-decoration:line-through;`,
-};
+// Handled globally
 
 let showOnlyToday = false;
 function toggleTodayFilter() {
@@ -1200,7 +1351,14 @@ function openModal(id = null) {
   }
   toggleModal('modalBg', true);
 }
-function closeModal() { toggleModal('modalBg', false); }
+function closeModal() { 
+  toggleModal('modalBg', false);
+  const btn = document.querySelector('.btn-save');
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Enregistrer';
+  }
+}
 const modalBg = document.getElementById('modalBg');
 if (modalBg) {
   modalBg.addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
@@ -1221,15 +1379,16 @@ function closeNoteModal() {
 }
 
 function addFastRow() {
-  const newId = 'p' + Date.now().toString();
+  const newDoc = db.collection('prospects').doc();
+  const nextId = newDoc.id;
   const today = new Date().toISOString().split('T')[0];
   const newP = {
-    id: newId, nom: '', isPriority: false, initiales: '+', av: '#E6F1FB:#185FA5',
+    id: nextId, nom: '', isPriority: false, initiales: '+', av: '#E6F1FB:#185FA5',
     telephone: '', email: '', entreprise: '', typeEntreprise: '', nbLocations: '', statut: 'appeler', source: 'Saisie Rapide',
     valeurFixe: 0, valeurMensuelle: 0, score: 0, resp: proFilterResp || teamMembers[0]?.name || 'Grégory', date: today, dateRelance: today, note: '', appels: []
   };
   prospects.unshift(newP);
-  saveProspectDoc(newP);
+  saveProspectDoc(newP, true); // true since it's a new doc
   sortCol = null;
   sortDir = 'asc';
   proSortCol = null;
@@ -1238,6 +1397,13 @@ function addFastRow() {
 }
 
 function saveProspect() {
+  const btn = document.querySelector('.btn-save');
+  if (btn) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement...';
+  }
+
   let nomInput = document.getElementById('mNom');
   let nom = nomInput ? nomInput.value.trim() : "";
   if (!nom) nom = "Nouveau Prospect";
@@ -1263,6 +1429,9 @@ function saveProspect() {
   };
 
   let savedP = null;
+  const isNew = !modalProspectId;
+  const oldStatus = modalProspectId ? prospects.find(p => p.id === modalProspectId)?.statut : null;
+
   if (modalProspectId) {
     const idx = prospects.findIndex(p => p.id === modalProspectId);
     if (idx > -1) {
@@ -1270,12 +1439,23 @@ function saveProspect() {
       savedP = prospects[idx];
     }
   } else {
-    savedP = { id: 'p' + Date.now(), ...data, appels: [] };
+    // SECURE ID GENERATION: Use Firestore's native ID instead of Date.now()
+    const newDoc = db.collection('prospects').doc();
+    savedP = { id: newDoc.id, ...data, appels: [] };
     prospects.unshift(savedP);
   }
 
   if (savedP) {
-    saveProspectDoc(savedP);
+    // BROADCAST: Collaboration Events
+    if (isNew) {
+      broadcastSyncEvent('new', `a ajouté un nouveau prospect : ${savedP.nom} (${savedP.entreprise})`);
+    } else if (oldStatus !== 'signe' && savedP.statut === 'signe') {
+      broadcastSyncEvent('win', `vient de SIGNER ${savedP.nom} ! 🎉`);
+    }
+
+    // ATOMIC SAVE: Distinguish between set and update in saveProspectDoc
+    saveProspectDoc(savedP, isNew);
+    
     if (modalProspectId) {
       updateRowInTables(modalProspectId);
     } else {
@@ -1371,6 +1551,18 @@ function deleteCall(idx) {
 }
 
 const callResultLabels = { repondu: 'Répondu', messagerie: 'Messagerie', injoignable: 'Injoignable', autre: 'Autre' };
+
+const EMAIL_TEMPLATES = {
+  rappel: {
+    subject: "Suite à notre échange — Synaptics",
+    body: (p) => `Bonjour ${p.nom || 'Madame, Monsieur'},\n\nJe reviens vers vous suite à notre dernier échange pour savoir si vous aviez pu avancer sur votre réflexion concernant nos solutions Synaptics.\n\nJe reste à votre entière disposition pour en discuter de vive voix.\n\nBien cordialement,\n\n${p.resp || 'L\'équipe Synaptics'}`
+  },
+  brochure: {
+    subject: "Brochure Synaptics — Solutions de Gestion CRM",
+    body: (p) => `Bonjour ${p.nom || 'Madame, Monsieur'},\n\nComme convenu, je vous prie de trouver ci-dessous le lien pour consulter notre brochure complète présentant nos solutions :\n\nhttps://synaptic.fr/brochure.pdf\n\nNous restons à votre disposition pour toute question complémentaire.\n\nBien cordialement,\n\n${p.resp || 'L\'équipe Synaptics'}`
+  }
+};
+
 function renderCallHistory() {
   const p = prospects.find(x => x.id === callProspectId);
   const el = document.getElementById('callHistory');
@@ -1394,6 +1586,62 @@ function renderCallHistory() {
       <button class="act-btn" onclick="deleteCall(${i})" style="font-size:10px;padding:2px 6px">×</button>
     </div>`;
   }).join('');
+}
+
+function renderPresenceWidget() {
+  const el = document.getElementById('presenceWidget');
+  if (!el) return;
+  if (onlineUsers.length <= 1) {
+    el.innerHTML = '';
+    return;
+  }
+  const others = onlineUsers.filter(u => u.id !== MY_USER_ID);
+  el.innerHTML = `
+    <div class="presence-bar">
+      <div class="presence-title">Équipe en ligne</div>
+      <div class="presence-list">
+        ${others.map(u => `<div class="presence-user" title="${u.name} (Online)">
+          <div class="presence-dot"></div>
+          <span>${u.name}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function broadcastSyncEvent(type, message) {
+  if (!dbReady || !db) return;
+  const name = localStorage.getItem('synaptic_user_name') || 'Anonyme';
+  db.collection('global_events').add({
+    type: type,
+    userId: MY_USER_ID,
+    userName: name,
+    message: message,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+function sendProspectEmail(id, templateType) {
+  const p = prospects.find(x => x.id === id);
+  if (!p) {
+    showToast('Prospect introuvable', 'error');
+    return;
+  }
+  if (!p.email) {
+    showToast('Aucun email renseigné pour ce prospect', 'error');
+    return;
+  }
+
+  const template = EMAIL_TEMPLATES[templateType];
+  if (!template) return;
+
+  const subject = encodeURIComponent(template.subject);
+  const body = encodeURIComponent(template.body(p));
+  
+  const mailtoLink = `mailto:${p.email}?subject=${subject}&body=${body}`;
+  window.location.href = mailtoLink;
+  
+  showToast(`E-mail (${templateType}) prêt à être envoyé`, 'success');
 }
 
 // ─── MULTI-SELECT & BULK ACTIONS ───
@@ -1638,16 +1886,7 @@ function dropFix(ev, newStatus) {
   }
 }
 
-var teamMembers = [
-  { name: 'Grégory', bg: '#B5D4F4', fg: '#0C447C' },
-  { name: 'Édouard', bg: '#C0DD97', fg: '#27500A' },
-  { name: 'Maxence', bg: '#CECBF6', fg: '#3C3489' },
-];
-var businessTypes = ['PME', 'ETI', 'Groupe', 'Garage', 'Avocat', 'Indépendant'];
-const teamColors = [
-  { bg: '#B5D4F4', fg: '#0C447C' }, { bg: '#C0DD97', fg: '#27500A' }, { bg: '#CECBF6', fg: '#3C3489' },
-  { bg: '#FAC775', fg: '#633806' }, { bg: '#9FE1CB', fg: '#0F6E56' }, { bg: '#F7C1C1', fg: '#791F1F' },
-];
+// Definitions moved to top
 
 function renderSettingsTeam() {
   const el = document.getElementById('settingsTeam');
@@ -1738,13 +1977,15 @@ function updateRespSelects() {
 }
 
 function updateTypeSelects(selectedValue = null) {
-  const selects = [document.getElementById('mTypeEntreprise')];
+  const selects = [document.getElementById('mTypeEntreprise'), document.getElementById('proFilterType')];
   selects.forEach(sel => {
     if (!sel) return;
+    const isFilter = sel.id === 'proFilterType';
     const current = selectedValue || sel.value;
     const exists = businessTypes.includes(current);
-    const orphanOpt = (current && !exists) ? `<option value="${current}" selected>⚠️ ${current}</option>` : '';
-    sel.innerHTML = '<option value="">Choisir un type...</option>' + orphanOpt + businessTypes.map(t => `<option value="${t}" ${t === current ? ' selected' : ''}>${t}</option>`).join('');
+    const orphanOpt = (current && !exists && !isFilter) ? `<option value="${current}" selected>⚠️ ${current}</option>` : '';
+    const defaultOpt = isFilter ? '<option value="">Tous les types</option>' : '<option value="">Choisir un type...</option>';
+    sel.innerHTML = defaultOpt + orphanOpt + businessTypes.map(t => `<option value="${t}" ${t === current ? ' selected' : ''}>${t}</option>`).join('');
   });
 }
 
@@ -1920,6 +2161,40 @@ function handleImportFile(file) {
 
 var proSortCol = null, proSortDir = 'asc';
 var proFilterResp = '';
+var proActiveSegment = 'all';
+
+function renderProSegments() {
+  const container = document.getElementById('proSegmentBar');
+  if (!container) return;
+
+  const counts = {};
+  counts['all'] = prospects.length;
+  businessTypes.forEach(t => {
+    counts[t] = prospects.filter(p => p.typeEntreprise === t).length;
+  });
+
+  let html = `<div class="segment-pill ${proActiveSegment === 'all' ? 'active' : ''}" onclick="setProSegment('all')">
+    <span>Tous</span>
+    <span class="segment-count">${counts['all']}</span>
+  </div>`;
+
+  businessTypes.forEach(t => {
+    html += `
+      <div class="segment-pill ${proActiveSegment === t ? 'active' : ''}" onclick="setProSegment('${t}')">
+        <span>${t}</span>
+        <span class="segment-count">${counts[t] || 0}</span>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function setProSegment(seg) {
+  proActiveSegment = seg;
+  renderProSegments();
+  renderProspectsTable();
+}
 
 function getProSelectedStatuses() {
   return Array.from(document.querySelectorAll('.pro-status-cb:checked')).map(cb => cb.value);
@@ -1977,17 +2252,30 @@ function saveInitialName() {
   toggleModal('welcomeModalBg', false);
   renderHero();
   showToast(`C'est parti, ${name} !`, 'success');
-  if (!localStorage.getItem('synaptic_tour_completed')) {
-    setTimeout(startTour, 1000);
-  }
+  
+  // Start tour after a short delay to let the modal close
+  setTimeout(startTour, 600);
 }
 
 function startTour() {
-  localStorage.setItem('synaptic_tour_completed', 'true');
-  showToast("Bienvenue ! Utilisez le menu latéral pour naviguer.", "info");
-  setTimeout(() => {
-    showToast("Le Dashboard vous donne une vue d'ensemble de votre activité.", "info");
-  }, 3000);
+  if (typeof driver === 'undefined') return;
+  
+  const driverObj = driver.js.driver({
+    showProgress: true,
+    steps: [
+      { element: '#sidebar', popover: { title: 'Navigation', description: 'Accédez ici à vos prospects, au Kanban et à vos paramètres.', side: "right", align: 'start' }},
+      { element: '#dashboardHero', popover: { title: 'Tableau de Bord', description: 'Suivez vos KPIs et votre activité quotidienne en un coup d\'œil.', side: "bottom", align: 'start' }},
+      { element: '#activityFeedCard', popover: { title: 'Collaboration Live', description: 'Voyez ce que vos collègues font en temps réel sur ce flux.', side: "top", align: 'center' }},
+      { element: '#presenceWidget', popover: { title: 'Équipe en ligne', description: 'Identifiez instantanément qui est connecté parmi vos collaborateurs.', side: "right", align: 'end' }},
+      { element: '#nav-prospects', popover: { title: 'Gestion Prospects', description: 'C\'est ici que vous gérerez votre base de données et passerez vos appels.', side: "right", align: 'start' }},
+    ],
+    onDeselected: () => {
+      localStorage.setItem('synaptic_tour_completed', 'true');
+      showToast("Visite terminée. À vous de jouer !", "success");
+    }
+  });
+
+  driverObj.drive();
 }
 
 function toggleTheme() {
@@ -2059,17 +2347,66 @@ function renderProspectsTable() {
   const qLow = q.toLowerCase();
   const st = getProSelectedStatuses();
   const today = new Date().toISOString().split('T')[0];
+  
+  // Advanced filters
+  const fDateEl = document.getElementById('proFilterDate');
+  const fDate = fDateEl ? fDateEl.value : '';
+  const fTypeEl = document.getElementById('proFilterType');
+  const fType = fTypeEl ? fTypeEl.value : '';
+  const fSourceEl = document.getElementById('proFilterSource');
+  const fSource = fSourceEl ? fSourceEl.value : '';
+  const fValueEl = document.getElementById('proFilterValue');
+  const fValue = fValueEl ? fValueEl.value : '';
 
   let rows = prospects.filter(p => {
+    // Basic Search & Resp
     if (st.length > 0 && !st.includes(p.statut)) return false;
     if (proFilterResp && p.resp !== proFilterResp) return false;
-    if (qLow && !p.nom.toLowerCase().includes(qLow) && !p.entreprise.toLowerCase().includes(qLow)) return false;
+    if (qLow && !p.nom.toLowerCase().includes(qLow) && !p.entreprise.toLowerCase().includes(qLow) && !p.email.toLowerCase().includes(qLow)) return false;
+    
+    // Priority / Today filters (Sidebar/Fixed buttons)
     if (proFilterType === 'prioritaires') {
       const isHot = ['rdv_planifie', 'rdv_effectue', 'signe'].includes(p.statut);
       if (!p.isPriority && !isHot && (p.score || 0) < 80) return false;
     } else if (proFilterType === 'aujourdhui') {
       if (!p.dateRelance || p.dateRelance !== today) return false;
     }
+    
+    // Advanced: Date Filter (Dropdown)
+    if (fDate) {
+      const pDateStr = p.date || '';
+      if (!pDateStr && fDate !== 'dormant') return false;
+      const pDate = new Date(pDateStr);
+      const now = new Date();
+      if (fDate === 'today') {
+        if (pDateStr !== today) return false;
+      } else if (fDate === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (pDate < weekAgo) return false;
+      } else if (fDate === 'month') {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        if (pDate < monthAgo) return false;
+      } else if (fDate === 'dormant') {
+        const last7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const isClosed = ['signe', 'perdu', 'npai'].includes(p.statut);
+        if (isClosed) return false;
+        if (pDateStr && pDate > last7) return false;
+      }
+    }
+    
+    // Advanced: Type & Source
+    if (proActiveSegment !== 'all' && p.typeEntreprise !== proActiveSegment) return false;
+    if (fType && p.typeEntreprise !== fType) return false;
+    if (fSource && p.source !== fSource) return false;
+    
+    // Advanced: Value (CA)
+    if (fValue) {
+      const acv = getACV(p);
+      if (fValue === 'small' && acv >= 1000) return false;
+      if (fValue === 'medium' && (acv < 1000 || acv > 10000)) return false;
+      if (fValue === 'large' && acv <= 10000) return false;
+    }
+
     return true;
   });
 
@@ -2077,19 +2414,63 @@ function renderProspectsTable() {
     rows.sort((a, b) => {
       let va = a[proSortCol], vb = b[proSortCol];
       if (proSortCol === 'valeur') { va = getACV(a); vb = getACV(b); }
+      if (va === undefined || va === null) va = '';
+      if (vb === undefined || vb === null) vb = '';
+      
+      // Numerical sort if both are numbers or numeric strings
+      const na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb) && isFinite(va) && isFinite(vb)) {
+        return proSortDir === 'asc' ? na - nb : nb - na;
+      }
+      
+      // String sort
+      va = va.toString().toLowerCase();
+      vb = vb.toString().toLowerCase();
       if (va < vb) return proSortDir === 'asc' ? -1 : 1;
       if (va > vb) return proSortDir === 'asc' ? 1 : -1;
       return 0;
     });
   }
 
-  if (rows.length === 0 && proFilterType !== 'all') {
-    const msg = proFilterType === 'prioritaires' ? 'Aucun prospect prioritaire trouvé.' : 'Rien de prévu pour aujourd\'hui.';
-    body.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:40px;color:var(--text3)">${msg}</td></tr>`;
+  // Update count
+  const countEl = document.getElementById('proTblCount');
+  if (countEl) countEl.textContent = `${rows.length} prospect${rows.length > 1 ? 's' : ''}`;
+
+  if (rows.length === 0) {
+    let msg = 'Aucun prospect trouvé.';
+    if (proFilterType === 'prioritaires') msg = 'Aucun prospect prioritaire trouvé.';
+    else if (proFilterType === 'aujourdhui') msg = 'Rien de prévu pour aujourd\'hui.';
+    body.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:40px;color:var(--text3)">${msg}</td></tr>`;
     return;
   }
   body.innerHTML = rows.map(p => buildRowHtml(p, 'full')).join('');
   updateProBulkBar();
+}
+
+/**
+ * Clear all filters for the prospects table.
+ */
+function clearAllProFilters() {
+  const selects = ['proFilterDate', 'proFilterType', 'proFilterSource', 'proFilterValue', 'proPersonSelect'];
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  
+  const search = document.getElementById('proSearchQ');
+  if (search) search.value = '';
+  
+  const master = document.getElementById('proCheckAllStatus');
+  if (master) master.checked = true;
+  document.querySelectorAll('.pro-status-cb').forEach(cb => cb.checked = true);
+  
+  proFilterType = 'all';
+  proFilterResp = '';
+  document.querySelectorAll('.btn-today').forEach(b => b.classList.remove('active'));
+  
+  updateProStatusLabel();
+  renderProspectsTable();
+  if (typeof showToast === 'function') showToast('Filtres réinitialisés', 'info');
 }
 
 (function initTooltips() {

@@ -25,6 +25,17 @@
 </head>
 
 <body>
+  <!-- LOADING SPLASH SCREEN -->
+  <div id="appSplash" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;transition:opacity 0.5s ease, visibility 0.5s;">
+    <div class="splash-logo" style="font-size:32px;font-weight:700;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;background:var(--blue);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:24px">S</div>
+      Synaptics Call CRM
+    </div>
+    <div class="splash-loader" style="width:200px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;position:relative">
+      <div class="splash-progress" style="position:absolute;top:0;left:-100%;width:100%;height:100%;background:var(--blue);animation:splashLoading 2s infinite"></div>
+    </div>
+    <div class="splash-text" style="margin-top:20px;font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Initialisation sécurisée...</div>
+  </div>
 
   <!-- ══════════════════════════════════════
      LOGIN PAGE
@@ -155,6 +166,9 @@
             <span class="item-label">Paramètres</span>
           </button>
         </div>
+        <div id="presenceWidget" style="margin-top: auto; padding: 20px 15px; border-top: 1px solid var(--border)">
+          <!-- Dynamic Content -->
+        </div>
         <div class="sidebar-footer">Synaptics Call CRM v1.0</div>
       </aside>
 
@@ -210,6 +224,15 @@
                 <div class="bcard-title">Équipe</div>
                 <div id="teamStatsBody"></div>
               </div>
+              <div class="bcard" id="activityFeedCard" style="grid-column: span 2">
+                <div class="bcard-title" style="display:flex; justify-content:space-between; align-items:center">
+                  <span>Flux d'activité collaboratif</span>
+                  <div class="pulse-live">Recalcul en direct</div>
+                </div>
+                <div id="activityFeedBody" class="activity-feed">
+                  <div style="text-align:center; padding:20px; color:var(--text3); font-size:13px">En attente d'activité...</div>
+                </div>
+              </div>
             </div>
 
 
@@ -240,6 +263,9 @@
                   </svg>
                   Prospects
                 </div>
+
+                <div id="proSegmentBar" class="segment-bar"></div>
+
                 <div class="table-controls">
                   <select class="tbl-filter" id="proPersonSelect" onchange="setProResp(this.value)"
                     style="width:140px"></select>
@@ -298,10 +324,32 @@
                     </div>
                   </div>
 
+                  <select class="tbl-filter" id="proFilterType" onchange="renderProspectsTable()" style="width:130px">
+                    <option value="">Tous les types</option>
+                  </select>
+                  <select class="tbl-filter" id="proFilterSource" onchange="renderProspectsTable()" style="width:120px">
+                    <option value="">Toutes les sources</option>
+                    <option value="LinkedIn">LinkedIn</option>
+                    <option value="Salon">Salon</option>
+                    <option value="Référence">Référence</option>
+                    <option value="Site web">Site web</option>
+                    <option value="Email">Email</option>
+                    <option value="Appel sortant">Appel sortant</option>
+                  </select>
+                  <select class="tbl-filter" id="proFilterValue" onchange="renderProspectsTable()" style="width:120px">
+                    <option value="">Toutes valeurs</option>
+                    <option value="small">Petit (< 1k€)</option>
+                    <option value="medium">Moyen (1k-10k€)</option>
+                    <option value="large">Gros (> 10k€)</option>
+                  </select>
+
                   <button class="btn-today" id="proBtnPriority" onclick="filterProList('prioritaires', this)"
                     title="Afficher uniquement les prospects prioritaires (score élevé, RDV proche, relance urgente)">Prioritaires</button>
                   <button class="btn-today" id="proBtnTodayPro" onclick="filterProList('aujourdhui', this)">Ma liste du
                     jour</button>
+                  <button class="btn-today" style="background:var(--surface2);color:var(--text3);border-color:var(--border2);min-width:40px;padding:0 8px" onclick="clearAllProFilters()" title="Réinitialiser tous les filtres">
+                    ✕
+                  </button>
                   <button class="btn-today"
                     style="background:var(--blue-l);color:var(--blue-d);border-color:var(--blue)" onclick="addFastRow()"
                     title="Ajouter une ligne vierge en haut du tableau en 1 clic">Ligne Rapide</button>
@@ -680,6 +728,13 @@
         <div class="mfield">
           <label>Email</label>
           <input type="email" id="mEmail" placeholder="contact@prospect.com" />
+        </div>
+        <div class="mfield" style="grid-column: span 2; margin-top: 5px; border-top: 1px dashed var(--border); padding-top: 15px">
+          <label style="color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px">Actions rapides</label>
+          <div style="display: flex; gap: 10px; margin-top: 8px">
+            <button class="btn-email-action" onclick="sendProspectEmail(modalProspectId, 'rappel')" style="flex: 1">📧 Envoyer Rappel</button>
+            <button class="btn-email-action" onclick="sendProspectEmail(modalProspectId, 'brochure')" style="flex: 1">📑 Envoyer Brochure</button>
+          </div>
         </div>
       </div>
       <div class="mfield">
